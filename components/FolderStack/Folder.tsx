@@ -23,8 +23,8 @@ export const Folder: React.FC<FolderProps> = ({
   const [contentHeight, setContentHeight] = useState(0);
   const bodyRef = useRef<HTMLDivElement>(null);
 
-  // We want the folder to be open if it's active OR if it's the last folder (Folder 8)
-  const isExpanded = isActive || isLast;
+  // The folder is open only if it is the currently active one
+  const isExpanded = isActive;
 
   useEffect(() => {
     const updateHeight = () => {

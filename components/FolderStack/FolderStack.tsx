@@ -5,7 +5,7 @@ import { FolderConfig } from "./types";
 import { Folder } from "./Folder";
 
 export const FolderStack: React.FC = () => {
-  const [activeFolderId, setActiveFolderId] = useState<number>(6);
+  const [activeFolderId, setActiveFolderId] = useState<number>(8);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const playIntervalRef = useRef<NodeJS.Timeout | null>(null);
 

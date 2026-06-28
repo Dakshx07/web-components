@@ -4,17 +4,12 @@ import React from "react";
 import { TabConfig } from "./types";
 
 interface FolderTabProps {
-  tab: tab; // Wait, type is TabConfig
+  tab: TabConfig;
   isActiveFolder: boolean;
   onClick?: () => void;
 }
 
-// Wait, let's make sure the import/prop type uses TabConfig correctly
-export const FolderTab: React.FC<{
-  tab: TabConfig;
-  isActiveFolder: boolean;
-  onClick?: () => void;
-}> = ({ tab, isActiveFolder, onClick }) => {
+export const FolderTab: React.FC<FolderTabProps> = ({ tab, isActiveFolder, onClick }) => {
   return (
     <div
       onClick={onClick}

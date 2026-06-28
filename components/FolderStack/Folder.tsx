@@ -46,7 +46,7 @@ export const Folder: React.FC<FolderProps> = ({
     <div className="w-full flex flex-col relative">
       {/* Folder Tab Header Row */}
       <div
-        className="flex items-end w-full h-[40px] z-10 relative select-none"
+        className="flex items-end w-full h-[50px] z-10 relative select-none"
         style={{
           backgroundColor: headerBgColor,
         }}

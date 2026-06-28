@@ -23,8 +23,8 @@ export const Folder: React.FC<FolderProps> = ({
   const [contentHeight, setContentHeight] = useState(0);
   const bodyRef = useRef<HTMLDivElement>(null);
 
-  // The folder is open only if it is the currently active one
-  const isExpanded = isActive;
+  // Folder 8 (isLast) always remains expanded
+  const isExpanded = isActive || isLast;
 
   useEffect(() => {
     const updateHeight = () => {
@@ -40,7 +40,7 @@ export const Folder: React.FC<FolderProps> = ({
       observer.observe(bodyRef.current);
       return () => observer.disconnect();
     }
-  }, [folder]);
+  }, [folder, isExpanded]);
 
   return (
     <div className="w-full flex flex-col relative">

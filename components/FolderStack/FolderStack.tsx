@@ -119,7 +119,7 @@ export const FolderStack: React.FC = () => {
 
   return (
     <div className="w-full max-w-[1050px] flex flex-col gap-8 px-4">
-      {/* Folder Stack Wrapper (Sharp corners, flat edges, shadow) */}
+      {/* Folder Stack Wrapper */}
       <div className="flex flex-col select-none w-full shadow-2xl overflow-hidden rounded-none border-none">
         <div className="flex flex-col gap-0 relative">
           {folders.map((folder, index) => {

@@ -63,12 +63,10 @@ export const Folder: React.FC<FolderProps> = ({
         </div>
       </div>
 
-      {/* Folder Body Container */}
+      {/* Folder Body Container (Completely sharp corners / rounded-none) */}
       <div
         ref={bodyRef}
-        className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] rounded-tr-2xl -mt-[1px] relative z-0 ${
-          isLast ? "rounded-b-2xl" : "rounded-b-none"
-        }`}
+        className="overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] -mt-[1px] relative z-0 rounded-none"
         style={{
           height: isExpanded ? `${contentHeight}px` : "0px",
           opacity: isExpanded ? 1 : 0,

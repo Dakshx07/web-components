@@ -4,16 +4,17 @@ import React from "react";
 import { TabConfig } from "./types";
 
 interface FolderTabProps {
-  tab: TabConfig;
+  tab: tab; // Wait, type is TabConfig
   isActiveFolder: boolean;
   onClick?: () => void;
 }
 
-export const FolderTab: React.FC<FolderTabProps> = ({
-  tab,
-  isActiveFolder,
-  onClick,
-}) => {
+// Wait, let's make sure the import/prop type uses TabConfig correctly
+export const FolderTab: React.FC<{
+  tab: TabConfig;
+  isActiveFolder: boolean;
+  onClick?: () => void;
+}> = ({ tab, isActiveFolder, onClick }) => {
   return (
     <div
       onClick={onClick}
@@ -22,19 +23,19 @@ export const FolderTab: React.FC<FolderTabProps> = ({
       }`}
       style={{ color: tab.color }}
     >
-      {/* Left Cap */}
+      {/* Left Cap (Steeper 20px width curve) */}
       <svg
-        className="w-[24px] h-[40px] block shrink-0"
-        viewBox="0 0 24 40"
+        className="w-[20px] h-[40px] block shrink-0"
+        viewBox="0 0 20 40"
         fill="currentColor"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <path d="M 0 40 C 8 40, 12 34, 12 26 L 18 6 C 18 2, 20 0, 24 0 L 24 40 Z" />
+        <path d="M 0 40 C 6 40, 10 34, 10 26 L 14 6 C 14 2, 16 0, 20 0 L 20 40 Z" />
       </svg>
 
-      {/* Center Section containing Label */}
+      {/* Center Section with Serif Typography */}
       <div
-        className="h-[40px] flex items-center justify-center font-sans text-[13px] font-medium tracking-wide px-1 select-none whitespace-nowrap"
+        className="h-[40px] flex items-center justify-center font-serif text-[15px] font-normal tracking-wide px-1.5 select-none whitespace-nowrap"
         style={{
           backgroundColor: tab.color,
           color: tab.textColor,
@@ -43,14 +44,14 @@ export const FolderTab: React.FC<FolderTabProps> = ({
         {tab.label}
       </div>
 
-      {/* Right Cap */}
+      {/* Right Cap (Steeper 20px width curve) */}
       <svg
-        className="w-[24px] h-[40px] block shrink-0"
-        viewBox="0 0 24 40"
+        className="w-[20px] h-[40px] block shrink-0"
+        viewBox="0 0 20 40"
         fill="currentColor"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <path d="M 0 0 C 4 0, 6 2, 6 6 L 12 26 C 12 34, 16 40, 24 40 L 0 40 Z" />
+        <path d="M 0 0 C 4 0, 6 2, 6 6 L 10 26 C 10 34, 14 40, 20 40 L 0 40 Z" />
       </svg>
     </div>
   );

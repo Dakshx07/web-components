@@ -118,9 +118,9 @@ export const FolderStack: React.FC = () => {
   }, [isPlaying, folders.length]);
 
   return (
-    <div className="w-full max-w-2xl flex flex-col gap-8 px-4">
-      {/* Folder Stack Wrapper */}
-      <div className="flex flex-col select-none w-full shadow-2xl rounded-t-xl rounded-b-2xl overflow-hidden border border-white/[0.05]">
+    <div className="w-full max-w-[850px] flex flex-col gap-8 px-4">
+      {/* Folder Stack Wrapper (Sharp corners, flat edges, shadow) */}
+      <div className="flex flex-col select-none w-full shadow-2xl overflow-hidden rounded-none border-none">
         <div className="flex flex-col gap-0 relative">
           {folders.map((folder, index) => {
             const headerBgColor = index === 0 ? "transparent" : folders[index - 1].primaryColor;
@@ -142,7 +142,52 @@ export const FolderStack: React.FC = () => {
           })}
         </div>
       </div>
-   
+
+      {/* Interactive Controls & Status Panel */}
+      <div className="flex flex-col gap-4 bg-zinc-900/50 backdrop-blur-sm p-5 rounded-2xl border border-white/[0.08] text-white">
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col">
+            <span className="text-[11px] uppercase tracking-wider text-zinc-500 font-mono">
+              Active Record
+            </span>
+            <span className="text-sm font-semibold font-mono">
+              Folder {activeFolderId} of {folders.length}: {folders[activeFolderId - 1].tabs[0].label}
+            </span>
+          </div>
+          <button
+            onClick={() => setIsPlaying(!isPlaying)}
+            className={`px-4 py-1.5 rounded-full text-xs font-semibold font-sans tracking-wide transition-colors ${
+              isPlaying
+                ? "bg-amber-500 text-black hover:bg-amber-400"
+                : "bg-white text-black hover:bg-zinc-200"
+            }`}
+          >
+            {isPlaying ? "Pause Cycle" : "Auto Cycle"}
+          </button>
+        </div>
+
+        {/* Quick select dots */}
+        <div className="flex items-center gap-2 justify-center py-1">
+          {folders.map((folder) => (
+            <button
+              key={folder.id}
+              onClick={() => {
+                setIsPlaying(false);
+                setActiveFolderId(folder.id);
+              }}
+              className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                activeFolderId === folder.id
+                  ? "bg-white scale-125 shadow-md"
+                  : "bg-zinc-700 hover:bg-zinc-500"
+              }`}
+              style={{
+                backgroundColor: activeFolderId === folder.id ? folder.primaryColor : undefined,
+              }}
+              title={folder.tabs[0].label}
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

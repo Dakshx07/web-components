@@ -1,75 +1,83 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React from "react";
 import { FolderConfig } from "./types";
 import { FolderTab } from "./FolderTab";
 import { FolderBody } from "./FolderBody";
 
+/**
+ * Constants shared with FolderStack for layout calculations.
+ */
+export const TAB_HEIGHT = 40;
+export const EXPANDED_BODY_HEIGHT = 320;
+
 interface FolderProps {
   folder: FolderConfig;
-  isActive: boolean;
-  onActiveToggle: () => void;
-  headerBgColor: string;
-  isLast: boolean;
+  index: number;
+  totalFolders: number;
+  initialHeaderBgColor: string;
 }
 
+/**
+ * A single folder in the rolodex stack.
+ *
+ * Renders with data-* attributes on key sub-elements so the parent
+ * FolderStack can target them with GSAP for scroll-driven animation.
+ *
+ * Initial inline styles prevent FOUC — GSAP takes over once mounted.
+ */
 export const Folder: React.FC<FolderProps> = ({
   folder,
-  isActive,
-  onActiveToggle,
-  headerBgColor,
-  isLast,
+  index,
+  totalFolders,
+  initialHeaderBgColor,
 }) => {
-  const [contentHeight, setContentHeight] = useState(0);
-  const bodyRef = useRef<HTMLDivElement>(null);
-
-  // Folder 8 (isLast) always remains expanded
-  const isExpanded = isActive || isLast;
-
-  useEffect(() => {
-    const updateHeight = () => {
-      if (bodyRef.current) {
-        setContentHeight(bodyRef.current.scrollHeight);
-      }
-    };
-
-    updateHeight();
-
-    if (typeof window !== "undefined" && bodyRef.current) {
-      const observer = new ResizeObserver(updateHeight);
-      observer.observe(bodyRef.current);
-      return () => observer.disconnect();
-    }
-  }, [folder, isExpanded]);
+  const isInitiallyActive = index === totalFolders - 1;
 
   return (
-    <div className="w-full flex flex-col relative">
-      {/* Folder Tab Header Row (12px base line of folder.primaryColor, 28px background of headerBgColor) */}
-      <div
-        className="flex items-end w-full h-[40px] z-10 relative select-none"
-        style={{
-          background: `linear-gradient(to top, ${folder.primaryColor} 12px, ${headerBgColor} 12px)`,
-        }}
-      >
-        <div className="flex items-end gap-1.5 pl-0">
-          {folder.tabs.map((tab, index) => (
+    <div
+      data-folder-idx={index}
+      className="absolute w-full flex flex-col will-change-transform"
+      style={{
+        top: `${index * TAB_HEIGHT}px`,
+        zIndex: index + 1,
+      }}
+    >
+      {/* Tab Header — two-layer background for GSAP color animation */}
+      <div className="relative w-full h-[40px] select-none">
+        {/* Top 28px: predecessor folder's color (animated by GSAP) */}
+        <div
+          data-header-bg
+          className="absolute inset-x-0 top-0 h-[28px]"
+          style={{ backgroundColor: initialHeaderBgColor }}
+        />
+        {/* Bottom 12px: this folder's own color (static) */}
+        <div
+          className="absolute inset-x-0 bottom-0 h-[12px]"
+          style={{ backgroundColor: folder.primaryColor }}
+        />
+        {/* Tab strip (sits on top of both background layers) */}
+        <div
+          data-tab-row
+          className="relative z-10 flex items-end gap-1.5 pl-0 h-full"
+        >
+          {folder.tabs.map((tab, tabIdx) => (
             <FolderTab
-              key={index}
+              key={tabIdx}
               tab={tab}
-              isActiveFolder={isActive}
-              onClick={onActiveToggle}
+              isActiveFolder={isInitiallyActive}
             />
           ))}
         </div>
       </div>
 
-      {/* Folder Body Container (Completely sharp corners / rounded-none) */}
+      {/* Body — height & opacity controlled by GSAP */}
       <div
-        ref={bodyRef}
-        className="overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] -mt-[1px] relative z-0 rounded-none"
+        data-folder-body
+        className="overflow-hidden -mt-[1px] relative"
         style={{
-          height: isExpanded ? `${contentHeight}px` : "0px",
-          opacity: isExpanded ? 1 : 0,
+          height: isInitiallyActive ? `${EXPANDED_BODY_HEIGHT}px` : "0px",
+          opacity: isInitiallyActive ? 1 : 0,
         }}
       >
         <FolderBody folder={folder} />

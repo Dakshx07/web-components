@@ -18,17 +18,17 @@ export const FolderTab: React.FC<FolderTabProps> = ({ tab, isActiveFolder, onCli
       }`}
       style={{ color: tab.color }}
     >
-      {/* Left Cap (Steeper 20px width curve) */}
+      {/* Left Cap (Sweeping 35px curve for natural flare) */}
       <svg
-        className="w-[20px] h-[40px] block shrink-0"
-        viewBox="0 0 20 40"
+        className="w-[35px] h-[40px] block shrink-0"
+        viewBox="0 0 35 40"
         fill="currentColor"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <path d="M 0 40 C 6 40, 10 34, 10 26 L 14 6 C 14 2, 16 0, 20 0 L 20 40 Z" />
+        <path d="M 0 40 C 10 40, 15 36, 15 26 L 20 10 C 20 4, 25 0, 35 0 L 35 40 Z" />
       </svg>
 
-      {/* Center Section with Serif Typography */}
+      {/* Center Section containing Label */}
       <div
         className="h-[40px] flex items-center justify-center font-serif text-[15px] font-normal tracking-wide px-1.5 select-none whitespace-nowrap"
         style={{
@@ -39,14 +39,14 @@ export const FolderTab: React.FC<FolderTabProps> = ({ tab, isActiveFolder, onCli
         {tab.label}
       </div>
 
-      {/* Right Cap (Steeper 20px width curve) */}
+      {/* Right Cap (Sweeping 35px curve for natural flare) */}
       <svg
-        className="w-[20px] h-[40px] block shrink-0"
-        viewBox="0 0 20 40"
+        className="w-[35px] h-[40px] block shrink-0"
+        viewBox="0 0 35 40"
         fill="currentColor"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <path d="M 0 0 C 4 0, 6 2, 6 6 L 10 26 C 10 34, 14 40, 20 40 L 0 40 Z" />
+        <path d="M 0 0 C 10 0, 15 4, 15 10 L 20 26 C 20 36, 25 40, 35 40 L 0 40 Z" />
       </svg>
     </div>
   );

@@ -44,11 +44,11 @@ export const Folder: React.FC<FolderProps> = ({
 
   return (
     <div className="w-full flex flex-col relative">
-      {/* Folder Tab Header Row */}
+      {/* Folder Tab Header Row (12px base line of folder.primaryColor, 28px background of headerBgColor) */}
       <div
         className="flex items-end w-full h-[40px] z-10 relative select-none"
         style={{
-          backgroundColor: headerBgColor,
+          background: `linear-gradient(to top, ${folder.primaryColor} 12px, ${headerBgColor} 12px)`,
         }}
       >
         <div className="flex items-end gap-1.5 pl-0">

@@ -13,7 +13,7 @@ export const FolderTab: React.FC<FolderTabProps> = ({ tab, isActiveFolder, onCli
   return (
     <div
       onClick={onClick}
-      className={`flex items-start select-none cursor-pointer transition-transform duration-200 ease-out active:scale-95 h-[40px] ${
+      className={`flex items-start select-none cursor-pointer transition-transform duration-200 ease-out h-[40px] ${
         isActiveFolder ? "z-10" : ""
       }`}
       style={{ color: tab.color }}

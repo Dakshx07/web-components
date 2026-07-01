@@ -352,6 +352,7 @@
   gap: 20px;
   border-radius: 0 0 8px 8px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+  transform-style: preserve-3d;
 }
 
 @media (max-width: 767px) {
@@ -372,6 +373,9 @@
   flex-direction: column;
   border-radius: 3px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  transform-origin: right center;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
 }
 
 @media (min-width: 768px) {
@@ -388,6 +392,9 @@
   position: relative;
   border-radius: 3px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
 }
 
 @media (min-width: 768px) {
@@ -640,6 +647,8 @@
   width: 100%;
   opacity: 0;
   transition: opacity 400ms ease-out;
+  perspective: 1500px;
+  transform-style: preserve-3d;
 }
 
 .readerLayerVisible {

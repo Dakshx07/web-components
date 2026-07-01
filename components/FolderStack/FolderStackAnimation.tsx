@@ -4,7 +4,6 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import gsap from "gsap";
 import { FolderConfig, AnimationPhase } from "./types";
 import { StackRow } from "./StackRow";
-import { Folder3DView } from "./Folder3DView";
 import { ReaderView } from "./ReaderView";
 import { useTextScramble } from "./TextScramble";
 import styles from "./FolderStackAnimation.module.css";
@@ -101,7 +100,6 @@ export const FolderStackAnimation: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const stackRef = useRef<HTMLDivElement>(null);
   const rowRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
-  const folder3dRef = useRef<HTMLDivElement>(null);
   const readerRef = useRef<HTMLDivElement>(null);
   const breadcrumbRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
@@ -194,61 +192,146 @@ export const FolderStackAnimation: React.FC = () => {
       );
     }
 
-    // ── Stage 2 (0.25–0.9s): 3D folder pops up ──
-    // Hide the target row, show 3D folder
+    // ── Stage 2: Direct 3D Reader Morphing (simultaneous opening) ──
     let initialY = 0;
+    let rowHeight = 60;
     if (targetRow && containerRef.current) {
       const targetRect = targetRow.getBoundingClientRect();
       const containerRect = containerRef.current.getBoundingClientRect();
       const targetCenterY = targetRect.top - containerRect.top + targetRect.height / 2;
       const containerCenterY = containerRect.height / 2;
       initialY = targetCenterY - containerCenterY;
+      rowHeight = targetRect.height;
+    }
+
+    // Query ReaderView components directly inside the readerLayer
+    const spread = readerRef.current?.querySelector(`.${styles.spreadContainer}`);
+    const leftPage = readerRef.current?.querySelector(`.${styles.leftPage}`);
+    const rightPage = readerRef.current?.querySelector(`.${styles.rightPage}`);
+    const receipt = readerRef.current?.querySelector(`.${styles.receiptWrapper}`);
+    const tabs = readerRef.current?.querySelector(`.${styles.rightEdgeTabs}`);
+
+    if (readerRef.current) {
+      // Show reader container immediately so we can animate its children
+      tl.set(readerRef.current, { display: "block", opacity: 1 }, 0.2);
     }
 
     if (targetRow) {
-      tl.to(targetRow, { opacity: 0, duration: 0.15, ease: "power2.out" }, 0.2);
+      // Hide stack row exactly when reader animation takes over
+      tl.to(targetRow, { opacity: 0, duration: 0.05 }, 0.2);
     }
 
-    if (folder3dRef.current) {
-      // Make folder visible
-      tl.set(folder3dRef.current, { opacity: 1, pointerEvents: "auto" }, 0.25);
+    // Set initial 3D closed/folded states matching stack row
+    if (spread) {
+      tl.set(spread, {
+        transformOrigin: "center center",
+        transformPerspective: 1000,
+        rotateX: 0,
+        rotateY: 0,
+        y: initialY,
+        scaleY: rowHeight / 580, // initial squashed height matching the row height
+        opacity: 0,
+      }, 0.2);
+    }
 
-      const folderGroup = folder3dRef.current.querySelector("[data-folder3d-group]");
-      if (folderGroup) {
-        // Start from clicked row position and scale
-        tl.fromTo(
-          folderGroup,
-          {
-            rotateX: 0,
-            rotateY: 0,
-            y: initialY,
-            scale: 0.5,
-            opacity: 0,
-          },
-          {
-            rotateX: -35,
-            rotateY: 18,
-            y: 0,
-            scale: 1,
-            opacity: 1,
-            duration: 0.65,
-            ease: "back.out(1.4)",
-          },
-          0.25
-        );
-      }
+    if (leftPage) {
+      tl.set(leftPage, {
+        rotateY: 85, // Folded back
+        opacity: 0,
+        boxShadow: "0 30px 60px rgba(0,0,0,0.4)",
+      }, 0.2);
+    }
 
-      // Slide document page up
-      const docPage = folder3dRef.current.querySelector("[data-doc-page]");
-      if (docPage) {
-        tl.from(docPage, { y: 60, opacity: 0, duration: 0.5, ease: "power3.out" }, 0.35);
-      }
+    if (rightPage) {
+      tl.set(rightPage, {
+        rotateY: -85, // Folded back
+        opacity: 0,
+        boxShadow: "0 30px 60px rgba(0,0,0,0.4)",
+      }, 0.2);
+    }
 
-      // Slide receipt in
-      const receipt = folder3dRef.current.querySelector("[data-receipt-card]");
-      if (receipt) {
-        tl.from(receipt, { y: 40, opacity: 0, rotation: 5, duration: 0.4, ease: "power3.out" }, 0.45);
-      }
+    if (receipt) {
+      tl.set(receipt, {
+        opacity: 0,
+        y: 80,
+        rotate: 15,
+      }, 0.2);
+    }
+
+    if (tabs) {
+      tl.set(tabs, {
+        opacity: 0,
+        x: -30,
+      }, 0.2);
+    }
+
+    // ── ANIMATION FLUID STEPS (Simultaneous Morph and Open) ──
+    if (spread) {
+      // Lift folder spread out from stack and scale up to full height
+      tl.to(spread, {
+        opacity: 1,
+        scaleY: 1,
+        y: -15, // Lift off slightly
+        rotateX: -18,
+        rotateY: 30, // 3D tilted
+        duration: 0.5,
+        ease: "power2.out",
+      }, 0.2);
+    }
+
+    // Unfold both flaps and settle flat at the same time
+    const openDuration = 0.9;
+    const openEase = "power3.inOut";
+
+    if (leftPage) {
+      tl.to(leftPage, {
+        rotateY: 0,
+        opacity: 1,
+        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.2)",
+        duration: openDuration,
+        ease: openEase,
+      }, 0.45);
+    }
+
+    if (rightPage) {
+      tl.to(rightPage, {
+        rotateY: 0,
+        opacity: 1,
+        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.2)",
+        duration: openDuration,
+        ease: openEase,
+      }, 0.45);
+    }
+
+    if (spread) {
+      tl.to(spread, {
+        y: 0,
+        rotateX: 0,
+        rotateY: 0,
+        duration: openDuration,
+        ease: openEase,
+      }, 0.45);
+    }
+
+    // Receipt card slides and drops in tactilely
+    if (receipt) {
+      tl.to(receipt, {
+        opacity: 1,
+        y: 0,
+        rotate: -5,
+        duration: 0.65,
+        ease: "power2.out",
+      }, 0.75);
+    }
+
+    // Side tabs slide out from the folder edge
+    if (tabs) {
+      tl.to(tabs, {
+        opacity: 1,
+        x: 0,
+        duration: 0.55,
+        ease: "back.out(1.3)",
+      }, 0.9);
     }
 
     // Title scramble + metadata fade in
@@ -270,45 +353,9 @@ export const FolderStackAnimation: React.FC = () => {
       );
     }
 
-    // ── Stage 3 (0.9–1.6s): De-rotate, scale up ──
-    if (folder3dRef.current) {
-      const folderGroup = folder3dRef.current.querySelector("[data-folder3d-group]");
-      if (folderGroup) {
-        tl.to(
-          folderGroup,
-          {
-            rotateX: -5,
-            rotateY: 5,
-            scale: 1.05,
-            duration: 0.7,
-            ease: "power3.out",
-          },
-          0.9
-        );
-      }
-    }
-
-    // ── Stage 4 (1.6–2.2s): Settle to flat, show reader ──
-    if (folder3dRef.current) {
-      tl.to(
-        folder3dRef.current,
-        { opacity: 0, duration: 0.4, ease: "power2.out" },
-        1.5
-      );
-    }
-
-    if (readerRef.current) {
-      tl.fromTo(
-        readerRef.current,
-        { opacity: 0, scale: 0.95, y: 20 },
-        { opacity: 1, scale: 1, y: 0, duration: 0.6, ease: "cubic-bezier(0.16, 1, 0.3, 1)" },
-        1.6
-      );
-    }
-
     // Scramble the title ref back to visible
     if (titleRef.current) {
-      tl.set(titleRef.current, { opacity: 1, y: 0 }, 1.6);
+      tl.set(titleRef.current, { opacity: 1, y: 0 }, 0.9);
     }
 
     tl.play();
@@ -331,7 +378,21 @@ export const FolderStackAnimation: React.FC = () => {
         if (breadcrumbRef.current) gsap.set(breadcrumbRef.current, { clearProps: "all" });
         if (titleRef.current) gsap.set(titleRef.current, { clearProps: "all" });
         if (metadataRef.current) gsap.set(metadataRef.current, { clearProps: "all" });
-        if (readerRef.current) gsap.set(readerRef.current, { clearProps: "all", opacity: 0 });
+        if (readerRef.current) {
+          gsap.set(readerRef.current, { clearProps: "all", opacity: 0 });
+          
+          const spread = readerRef.current.querySelector(`.${styles.spreadContainer}`);
+          const leftPage = readerRef.current.querySelector(`.${styles.leftPage}`);
+          const rightPage = readerRef.current.querySelector(`.${styles.rightPage}`);
+          const receipt = readerRef.current.querySelector(`.${styles.receiptWrapper}`);
+          const tabs = readerRef.current.querySelector(`.${styles.rightEdgeTabs}`);
+          
+          if (spread) gsap.set(spread, { clearProps: "all" });
+          if (leftPage) gsap.set(leftPage, { clearProps: "all" });
+          if (rightPage) gsap.set(rightPage, { clearProps: "all" });
+          if (receipt) gsap.set(receipt, { clearProps: "all" });
+          if (tabs) gsap.set(tabs, { clearProps: "all" });
+        }
       },
     });
     timelineRef.current = tl;
@@ -452,9 +513,6 @@ export const FolderStackAnimation: React.FC = () => {
           );
         })}
       </div>
-
-      {/* ── 3D Folder layer (overlay) ── */}
-      <Folder3DView ref={folder3dRef} />
 
       {/* ── Reader layer ── */}
       <div

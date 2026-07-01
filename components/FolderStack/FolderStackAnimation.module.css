@@ -1,0 +1,835 @@
+/* ════════════════════════════════════════════════════════════════
+   FolderStackAnimation.module.css
+   All animation-specific styles for the Stack → Folder → File
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Main Orchestrator Container ── */
+.animationContainer {
+  position: relative;
+  width: 100%;
+  max-width: 1050px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+/* ── Scene A: Stack View ── */
+.stackWrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.breadcrumb {
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8A8A8E;
+  margin-bottom: 8px;
+}
+
+.stackTitle {
+  font-family: var(--font-display-serif), Georgia, serif;
+  font-size: clamp(36px, 5vw, 56px);
+  font-weight: 400;
+  color: #F0ECE4;
+  letter-spacing: 0.02em;
+  margin-bottom: 28px;
+  line-height: 1.1;
+}
+
+/* ── Stack Row ── */
+.stackRow {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  cursor: pointer;
+}
+
+.stackRowHeader {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  height: 40px;
+  z-index: 10;
+  position: relative;
+  user-select: none;
+}
+
+.stackRowTabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding-left: 0;
+}
+
+.stackRowBody {
+  overflow: hidden;
+  position: relative;
+  z-index: 0;
+  margin-top: -1px;
+  transition: height 500ms cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 500ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stackRowBodyContent {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 32px 40px;
+  font-family: var(--font-mono), monospace;
+  font-size: 8.5px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+@media (min-width: 640px) {
+  .stackRowBodyContent {
+    padding: 32px 72px;
+  }
+}
+
+.contentId {
+  width: 80px;
+  flex-shrink: 0;
+  opacity: 0.6;
+  font-weight: 600;
+  user-select: none;
+}
+
+@media (min-width: 640px) {
+  .contentId {
+    width: 120px;
+  }
+}
+
+.contentText {
+  flex: 1;
+  white-space: pre-line;
+  line-height: 1.6;
+  max-width: 480px;
+}
+
+.contentDate {
+  width: 110px;
+  flex-shrink: 0;
+  text-align: right;
+  opacity: 0.6;
+  user-select: none;
+}
+
+@media (min-width: 640px) {
+  .contentDate {
+    width: 180px;
+  }
+}
+
+/* ── Folder Tab (curved caps) ── */
+.folderTab {
+  display: flex;
+  align-items: flex-start;
+  user-select: none;
+  cursor: pointer;
+  height: 40px;
+  transition: transform 200ms ease-out;
+}
+
+.folderTab:hover {
+  transform: translateY(-2px);
+}
+
+.tabCapSvg {
+  width: 35px;
+  height: 40px;
+  display: block;
+  flex-shrink: 0;
+}
+
+.tabLabel {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body-serif), Georgia, serif;
+  font-style: italic;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  padding: 0 6px;
+  white-space: nowrap;
+}
+
+/* ── 3D Folder View ── */
+.folder3dContainer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1200px;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.folder3dGroup {
+  position: relative;
+  width: 480px;
+  height: 360px;
+  transform-style: preserve-3d;
+  transform-origin: bottom left;
+}
+
+.folderBackCover {
+  position: absolute;
+  inset: 0;
+  background: #D6231B;
+  border-radius: 4px;
+  transform: translateZ(-4px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.folderFrontCover {
+  position: absolute;
+  top: -20px;
+  right: -12px;
+  bottom: 10px;
+  left: 12px;
+  background: #2255CC;
+  border-radius: 4px;
+  transform: translateZ(2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.folderFrontTab {
+  position: absolute;
+  top: -16px;
+  left: 20px;
+  padding: 4px 16px;
+  background: #2255CC;
+  border-radius: 4px 4px 0 0;
+  font-family: var(--font-body-serif), Georgia, serif;
+  font-style: italic;
+  font-size: 12px;
+  color: #F0ECE4;
+  letter-spacing: 0.02em;
+}
+
+.documentPage {
+  position: absolute;
+  top: -10px;
+  right: -6px;
+  bottom: 20px;
+  left: 20px;
+  background: #F7F3EA;
+  border-radius: 2px;
+  transform: translateZ(4px);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  padding: 16px 20px;
+  overflow: hidden;
+}
+
+.docHashId {
+  font-family: var(--font-mono), monospace;
+  font-size: 8px;
+  color: #8A8A8E;
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+  word-break: break-all;
+}
+
+.docFileChip {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  border: 1px solid rgba(36, 20, 22, 0.2);
+  padding: 2px 8px;
+  color: #241416;
+}
+
+.docTextPeek {
+  font-family: var(--font-body-serif), Georgia, serif;
+  font-size: 10px;
+  color: #241416;
+  opacity: 0.5;
+  line-height: 1.5;
+  margin-top: 12px;
+}
+
+.receiptInFolder {
+  position: absolute;
+  bottom: -10px;
+  right: -20px;
+  transform: translateZ(6px) rotate(3deg);
+}
+
+/* ── Reader View ── */
+.readerContainer {
+  width: 100%;
+  position: relative;
+  border-radius: 4px;
+  overflow: visible;
+}
+
+.chromeBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: #1A1A1C;
+  border-radius: 6px 6px 0 0;
+}
+
+.chromeBreadcrumb {
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8A8A8E;
+}
+
+.chromeIcons {
+  display: flex;
+  gap: 12px;
+}
+
+.chromeIcon {
+  width: 16px;
+  height: 16px;
+  opacity: 0.4;
+  color: #8A8A8E;
+}
+
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  background: #0E0E10;
+}
+
+.readerTitle {
+  font-family: var(--font-display-serif), Georgia, serif;
+  font-size: clamp(36px, 4.5vw, 56px);
+  font-weight: 400;
+  color: #F0ECE4;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+}
+
+.metadataBlock {
+  text-align: right;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: #8A8A8E;
+  line-height: 1.6;
+  flex-shrink: 0;
+  padding-top: 8px;
+}
+
+.metadataDate {
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+/* ── Two-page spread (Solid Blue Folder Backboard) ── */
+.spreadContainer {
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+  min-height: 580px;
+  background: #2255CC;
+  padding: 32px 32px 80px 32px;
+  gap: 20px;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+}
+
+@media (max-width: 767px) {
+  .spreadContainer {
+    flex-direction: column;
+    padding: 20px 20px 120px 20px;
+    align-items: center;
+  }
+}
+
+/* Left page — pink */
+.leftPage {
+  flex: 1;
+  background: #E8B4C4;
+  padding: 40px 32px 32px 32px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: 3px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+@media (min-width: 768px) {
+  .leftPage {
+    height: 380px;
+  }
+}
+
+/* Right page — cream */
+.rightPage {
+  flex: 1;
+  background: #F7F3EA;
+  display: flex;
+  position: relative;
+  border-radius: 3px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+@media (min-width: 768px) {
+  .rightPage {
+    height: 560px;
+  }
+}
+
+/* ── Page headings ── */
+.pageHeading {
+  font-family: var(--font-display-serif), Georgia, serif;
+  font-style: italic;
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 400;
+  color: #241416;
+  margin-bottom: 16px;
+  line-height: 1.2;
+}
+
+/* ── File chip (File #02, File #03) ── */
+.fileChip {
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  border: 1px solid rgba(36, 20, 22, 0.25);
+  padding: 2px 10px;
+  color: #241416;
+  display: inline-block;
+  margin-bottom: 12px;
+  align-self: flex-end;
+}
+
+/* ── Two-column body (left page) ── */
+.twoColumnBody {
+  font-family: var(--font-body-serif), Georgia, serif;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: #241416;
+  column-count: 2;
+  column-gap: 24px;
+  text-align: justify;
+  hyphens: auto;
+  flex: 1;
+}
+
+@media (max-width: 767px) {
+  .twoColumnBody {
+    column-count: 1;
+  }
+}
+
+.twoColumnBody p {
+  margin: 0;
+}
+
+/* ── Left page bottom ── */
+.leftPageBottom {
+  margin-top: auto;
+  padding-top: 24px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.printerMarks {
+  display: flex;
+  gap: 12px;
+  font-family: var(--font-mono), monospace;
+  font-size: 8px;
+  color: #241416;
+  opacity: 0.2;
+}
+
+.stampWrapperLeft {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stampWrapperRight {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.stampCaption {
+  font-family: var(--font-mono), monospace;
+  font-size: 7px;
+  color: #241416;
+  opacity: 0.3;
+  letter-spacing: 0.04em;
+}
+
+/* ── Margin column (right page) ── */
+.marginColumn {
+  width: 56px;
+  padding: 28px 8px 28px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+@media (max-width: 767px) {
+  .marginColumn {
+    width: 44px;
+    padding: 20px 6px 20px 8px;
+  }
+}
+
+.binderDots {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+  align-items: center;
+}
+
+.binderDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #B8B0A4;
+  opacity: 0.4;
+}
+
+.marginAnnotation {
+  font-family: var(--font-mono), monospace;
+  font-size: 7.5px;
+  line-height: 1.5;
+  color: #8A8A8E;
+  writing-mode: horizontal-tb;
+  word-break: break-word;
+  margin-top: 8px;
+  max-width: 44px;
+}
+
+.tickRuler {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.tickMark {
+  width: 10px;
+  height: 1px;
+  background: #B8B0A4;
+  opacity: 0.25;
+}
+
+/* ── Right page content ── */
+.rightPageContent {
+  flex: 1;
+  padding: 20px 16px 20px 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  .rightPageContent {
+    padding: 40px 32px 32px 20px;
+  }
+}
+
+.singleColumnBody {
+  font-family: var(--font-body-serif), Georgia, serif;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #241416;
+  flex: 1;
+}
+
+.singleColumnBody p {
+  margin: 0 0 14px 0;
+}
+
+.singleColumnBody p:last-child {
+  margin-bottom: 0;
+}
+
+.rightPageBottom {
+  margin-top: auto;
+  padding-top: 24px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  border-top: 1px solid rgba(36, 20, 22, 0.1);
+}
+
+.printerMarksRight {
+  display: flex;
+  gap: 12px;
+  font-family: var(--font-mono), monospace;
+  font-size: 8px;
+  color: #241416;
+  opacity: 0.2;
+}
+
+/* ── Receipt Wrapper (floats bottom-left corner of spread) ── */
+.receiptWrapper {
+  position: absolute;
+  bottom: -40px;
+  left: 48px;
+  z-index: 30;
+  transform: rotate(-5deg);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+  transition: transform 300ms ease;
+}
+
+.receiptWrapper:hover {
+  transform: rotate(-3deg) scale(1.02);
+}
+
+@media (max-width: 767px) {
+  .receiptWrapper {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    margin-top: 32px;
+    transform: rotate(-2deg);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* ── Right-edge folder tabs ── */
+.rightEdgeTabs {
+  position: absolute;
+  right: -28px;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 20;
+}
+
+/* ── Overlay / phase containers ── */
+.stackLayer {
+  width: 100%;
+  transition: opacity 300ms ease-out;
+}
+
+.readerLayer {
+  width: 100%;
+  opacity: 0;
+  transition: opacity 400ms ease-out;
+}
+
+.readerLayerVisible {
+  opacity: 1;
+}
+
+/* ── Header area (persists across phases) ── */
+.headerArea {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.metadataBlockHeader {
+  text-align: right;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: #8A8A8E;
+  line-height: 1.6;
+}
+
+/* ── Persistent Navigation Header ── */
+.topNavBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  z-index: 100;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+@media (max-width: 767px) {
+  .topNavBar {
+    padding: 0 20px;
+  }
+}
+
+.navLeft {
+  display: flex;
+  gap: 24px;
+}
+
+@media (max-width: 640px) {
+  .navLeft {
+    display: none;
+  }
+}
+
+.navLink {
+  color: #8A8A8E;
+  text-decoration: none;
+  transition: color 200ms;
+}
+
+.navLink:hover {
+  color: #F0ECE4;
+}
+
+.navLogo {
+  font-family: var(--font-body-serif), Georgia, serif;
+  font-style: italic;
+  font-size: 16px;
+  color: #F0ECE4;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  justify-content: center;
+}
+
+.navRight {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.navSearch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #8A8A8E;
+  cursor: pointer;
+  transition: color 200ms;
+}
+
+.navSearch:hover {
+  color: #F0ECE4;
+}
+
+.searchIcon {
+  width: 14px;
+  height: 14px;
+}
+
+/* ── Technical Corner Info ── */
+.cornerInfoLeft {
+  position: absolute;
+  top: 80px;
+  left: 40px;
+  display: flex;
+  gap: 40px;
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  color: #8A8A8E;
+  opacity: 0.4;
+  user-select: none;
+  pointer-events: none;
+}
+
+@media (max-width: 767px) {
+  .cornerInfoLeft {
+    display: none;
+  }
+}
+
+.cornerInfoRight {
+  position: absolute;
+  top: 80px;
+  right: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  color: #8A8A8E;
+  opacity: 0.4;
+  user-select: none;
+  pointer-events: none;
+  line-height: 1.2;
+}
+
+@media (max-width: 767px) {
+  .cornerInfoRight {
+    display: none;
+  }
+}
+
+/* ── Persistent Footer ── */
+.appFooter {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  z-index: 100;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+@media (max-width: 767px) {
+  .appFooter {
+    padding: 0 20px;
+  }
+}
+
+.footerText {
+  font-family: var(--font-body-serif), Georgia, serif;
+  font-style: italic;
+  font-size: 11px;
+  color: #8A8A8E;
+  opacity: 0.5;
+}
+
+.footerLogo {
+  font-family: var(--font-body-serif), Georgia, serif;
+  font-style: italic;
+  font-size: 12px;
+  color: #8A8A8E;
+  opacity: 0.5;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+

@@ -12,3 +12,5 @@ export interface FolderConfig {
   contentDate: string;
   contentText: string;
 }
+
+export type AnimationPhase = "stack" | "collapsing" | "folder3d" | "reader";

@@ -1,26 +1,33 @@
 "use client";
 
 import React from "react";
-import { TabConfig } from "./types";
+import styles from "./FolderStackAnimation.module.css";
 
 interface FolderTabProps {
-  tab: TabConfig;
-  isActiveFolder: boolean;
-  onClick?: () => void;
+  label: string;
+  color: string;
+  textColor: string;
+  onClick?: (e: React.MouseEvent) => void;
+  dataTabId?: string;
 }
 
-export const FolderTab: React.FC<FolderTabProps> = ({ tab, isActiveFolder, onClick }) => {
+export const FolderTab: React.FC<FolderTabProps> = ({
+  label,
+  color,
+  textColor,
+  onClick,
+  dataTabId,
+}) => {
   return (
     <div
+      className={styles.folderTab}
+      style={{ color }}
       onClick={onClick}
-      className={`flex items-start select-none cursor-pointer transition-transform duration-200 ease-out h-[40px] ${
-        isActiveFolder ? "z-10" : ""
-      }`}
-      style={{ color: tab.color }}
+      data-tab-id={dataTabId}
     >
-      {/* Left Cap (Curves within top 28px, transparent bottom 12px) */}
+      {/* Left curved cap */}
       <svg
-        className="w-[35px] h-[40px] block shrink-0"
+        className={styles.tabCapSvg}
         viewBox="0 0 35 40"
         fill="currentColor"
         xmlns="http://www.w3.org/2000/svg"
@@ -28,20 +35,20 @@ export const FolderTab: React.FC<FolderTabProps> = ({ tab, isActiveFolder, onCli
         <path d="M 0 28 C 17.5 28, 17.5 0, 35 0 L 35 28 Z" />
       </svg>
 
-      {/* Center Section containing Label (Fixed 28px height to align with curves) */}
+      {/* Center label */}
       <div
-        className="h-[28px] flex items-center justify-center font-serif text-[15px] font-normal tracking-wide px-1.5 select-none whitespace-nowrap"
+        className={styles.tabLabel}
         style={{
-          backgroundColor: tab.color,
-          color: tab.textColor,
+          backgroundColor: color,
+          color: textColor,
         }}
       >
-        {tab.label}
+        {label}
       </div>
 
-      {/* Right Cap (Curves within top 28px, transparent bottom 12px) */}
+      {/* Right curved cap */}
       <svg
-        className="w-[35px] h-[40px] block shrink-0"
+        className={styles.tabCapSvg}
         viewBox="0 0 35 40"
         fill="currentColor"
         xmlns="http://www.w3.org/2000/svg"

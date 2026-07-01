@@ -7,7 +7,7 @@
 .animationContainer {
   position: relative;
   width: 100%;
-  max-width: 1050px;
+  max-width: 1150px;
   margin: 0 auto;
   min-height: 100vh;
   display: flex;
@@ -76,7 +76,7 @@
   z-index: 0;
   margin-top: -1px;
   transition: height 500ms cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 500ms cubic-bezier(0.16, 1, 0.3, 1);
+    opacity 500ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .stackRowBodyContent {
@@ -344,11 +344,11 @@
 /* ── Two-page spread (Solid Blue Folder Backboard) ── */
 .spreadContainer {
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
   position: relative;
   min-height: 580px;
   background: #2255CC;
-  padding: 32px 32px 80px 32px;
+  padding: 32px;
   gap: 20px;
   border-radius: 0 0 8px 8px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
@@ -364,7 +364,7 @@
 
 /* Left page — pink */
 .leftPage {
-  flex: 1;
+  flex: 42;
   background: #E8B4C4;
   padding: 40px 32px 32px 32px;
   position: relative;
@@ -376,13 +376,13 @@
 
 @media (min-width: 768px) {
   .leftPage {
-    height: 380px;
+    height: 400px;
   }
 }
 
 /* Right page — cream */
 .rightPage {
-  flex: 1;
+  flex: 58;
   background: #F7F3EA;
   display: flex;
   position: relative;
@@ -392,7 +392,7 @@
 
 @media (min-width: 768px) {
   .rightPage {
-    height: 560px;
+    height: 660px;
   }
 }
 
@@ -450,6 +450,7 @@
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
+  border-top: 1px solid rgba(36, 20, 22, 0.1);
 }
 
 .printerMarks {
@@ -832,4 +833,3 @@
   align-items: center;
   justify-content: center;
 }
-

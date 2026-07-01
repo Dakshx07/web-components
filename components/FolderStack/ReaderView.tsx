@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import { ReceiptCard } from "./ReceiptCard";
 import { FilesStamp } from "./FilesStamp";
 import styles from "./FolderStackAnimation.module.css";
@@ -61,12 +61,106 @@ const VerticalTabSVG: React.FC<{ color: string; label: string }> = ({ color, lab
 };
 
 export const ReaderView: React.FC<ReaderViewProps> = ({ className }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const pinkRef = useRef<HTMLDivElement>(null);
+  const receiptRef = useRef<HTMLDivElement>(null);
+
+  const [pinkPos, setPinkPos] = useState({ x: 0, y: 0 });
+  const [receiptPos, setReceiptPos] = useState({ x: 0, y: 0 });
+  const [draggingTarget, setDraggingTarget] = useState<"pink" | "receipt" | null>(null);
+
+  const handleDragStart = (
+    e: React.MouseEvent | React.TouchEvent,
+    target: "pink" | "receipt"
+  ) => {
+    // Check if clicking interactive elements to allow regular interactions
+    const targetTagName = (e.target as HTMLElement).tagName.toLowerCase();
+    if (targetTagName === "button" || targetTagName === "a" || targetTagName === "input") {
+      return;
+    }
+
+    e.preventDefault();
+    setDraggingTarget(target);
+
+    const isTouch = "touches" in e;
+    const clientX = isTouch ? e.touches[0].clientX : e.clientX;
+    const clientY = isTouch ? e.touches[0].clientY : e.clientY;
+
+    const startX = clientX;
+    const startY = clientY;
+
+    const initialX = target === "pink" ? pinkPos.x : receiptPos.x;
+    const initialY = target === "pink" ? pinkPos.y : receiptPos.y;
+
+    if (!containerRef.current) return;
+    const parentRect = containerRef.current.getBoundingClientRect();
+
+    const targetEl = target === "pink" ? pinkRef.current : receiptRef.current;
+    if (!targetEl) return;
+    const elRect = targetEl.getBoundingClientRect();
+
+    // Calculate original position of the element relative to parent
+    const origLeft = elRect.left - parentRect.left - initialX;
+    const origTop = elRect.top - parentRect.top - initialY;
+
+    const handleDragMove = (moveEvent: MouseEvent | TouchEvent) => {
+      const moveTouch = "touches" in moveEvent;
+      const moveX = moveTouch ? moveEvent.touches[0].clientX : moveEvent.clientX;
+      const moveY = moveTouch ? moveEvent.touches[0].clientY : moveEvent.clientY;
+
+      let targetX = initialX + (moveX - startX);
+      let targetY = initialY + (moveY - startY);
+
+      // Boundaries inside container
+      const minX = -origLeft;
+      const maxX = parentRect.width - elRect.width - origLeft;
+      const minY = -origTop;
+      const maxY = parentRect.height - elRect.height - origTop;
+
+      targetX = Math.max(minX, Math.min(maxX, targetX));
+      targetY = Math.max(minY, Math.min(maxY, targetY));
+
+      if (target === "pink") {
+        setPinkPos({ x: targetX, y: targetY });
+      } else {
+        setReceiptPos({ x: targetX, y: targetY });
+      }
+    };
+
+    const handleDragEnd = () => {
+      setDraggingTarget(null);
+      window.removeEventListener("mousemove", handleDragMove);
+      window.removeEventListener("mouseup", handleDragEnd);
+      window.removeEventListener("touchmove", handleDragMove);
+      window.removeEventListener("touchend", handleDragEnd);
+    };
+
+    window.addEventListener("mousemove", handleDragMove);
+    window.addEventListener("mouseup", handleDragEnd);
+    window.addEventListener("touchmove", handleDragMove);
+    window.addEventListener("touchend", handleDragEnd);
+  };
+
   return (
-    <div className={`${styles.readerContainer} ${className || ""}`}>
+    <div 
+      className={`${styles.readerContainer} ${className || ""}`}
+      style={{ userSelect: draggingTarget ? "none" : "auto" }}
+    >
       {/* ── Two-page spread (solid blue folder backboard) ── */}
-      <div className={styles.spreadContainer}>
-        {/* ═══ LEFT PAGE — Excerpt A (pink) ═══ */}
-        <div className={styles.leftPage}>
+      <div className={styles.spreadContainer} ref={containerRef}>
+        {/* ═══ LEFT PAGE — Excerpt A (pink) — Draggable ═══ */}
+        <div
+          ref={pinkRef}
+          className={styles.leftPage}
+          style={{
+            transform: `translate3d(${pinkPos.x}px, ${pinkPos.y}px, 0)`,
+            cursor: draggingTarget === "pink" ? "grabbing" : "grab",
+            zIndex: draggingTarget === "pink" ? 40 : 10,
+            transition: draggingTarget === "pink" ? "none" : "transform 150ms ease-out",
+          }}
+          onMouseDown={(e) => handleDragStart(e, "pink")}
+          onTouchStart={(e) => handleDragStart(e, "pink")}
+        >
           {/* File chip */}
           <div className={styles.fileChip}>File #03</div>
 
@@ -103,8 +197,8 @@ export const ReaderView: React.FC<ReaderViewProps> = ({ className }) => {
           </div>
         </div>
 
-        {/* ═══ RIGHT PAGE — Unverified (cream) ═══ */}
-        <div className={styles.rightPage}>
+        {/* ═══ RIGHT PAGE — Unverified (cream) — Fixed ═══ */}
+        <div className={styles.rightPage} style={{ zIndex: 5 }}>
           {/* Margin column with binder dots and annotation */}
           <div className={styles.marginColumn}>
             <div className={styles.binderDots}>
@@ -174,8 +268,19 @@ export const ReaderView: React.FC<ReaderViewProps> = ({ className }) => {
           </div>
         </div>
 
-        {/* ═══ YELLOW RECEIPT (floats on the blue folder background in the bottom-left corner) ═══ */}
-        <div className={styles.receiptWrapper}>
+        {/* ═══ YELLOW RECEIPT — Draggable (floats on the blue folder background) ═══ */}
+        <div
+          ref={receiptRef}
+          className={styles.receiptWrapper}
+          style={{
+            transform: `translate3d(${receiptPos.x}px, ${receiptPos.y}px, 0) rotate(-5deg)`,
+            cursor: draggingTarget === "receipt" ? "grabbing" : "grab",
+            zIndex: draggingTarget === "receipt" ? 50 : 30,
+            transition: draggingTarget === "receipt" ? "none" : "transform 150ms ease-out",
+          }}
+          onMouseDown={(e) => handleDragStart(e, "receipt")}
+          onTouchStart={(e) => handleDragStart(e, "receipt")}
+        >
           <ReceiptCard />
         </div>
       </div>

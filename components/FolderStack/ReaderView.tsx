@@ -142,7 +142,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({ className }) => {
   };
 
   return (
-    <div 
+    <div
       className={`${styles.readerContainer} ${className || ""}`}
       style={{ userSelect: draggingTarget ? "none" : "auto" }}
     >
@@ -259,7 +259,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({ className }) => {
                 <FilesStamp />
                 <span className={styles.stampCaption}>Last known revision</span>
               </div>
-              
+
               <div className={styles.printerMarksRight}>
                 <span>4.2</span>
                 <span>01</span>

@@ -151,6 +151,16 @@ export const FolderStackAnimation: React.FC = () => {
 
     setPhase("collapsing");
 
+    // Force display style on readerRef immediately to allow measuring its layout
+    if (readerRef.current) {
+      readerRef.current.style.display = "block";
+      readerRef.current.style.position = "absolute";
+      readerRef.current.style.top = "24px";
+      readerRef.current.style.left = "16px";
+      readerRef.current.style.width = "calc(100% - 32px)";
+      readerRef.current.style.zIndex = "1";
+    }
+
     // ── Stage 1 (0–0.25s): Fade/slide non-target rows ──
     const nonTargetRows: HTMLDivElement[] = [];
     rowRefs.current.forEach((el, id) => {
@@ -163,17 +173,40 @@ export const FolderStackAnimation: React.FC = () => {
 
     nonTargetRows.forEach((row) => {
       const rowId = parseInt(row.dataset.rowId || "0");
-      const direction = rowId < TARGET_FOLDER_ID ? -1 : 1;
-      tl.to(
-        row,
-        {
-          opacity: 0,
-          y: direction * 30,
-          duration: 0.25,
-          ease: "power2.out",
-        },
-        0
-      );
+      if (rowId < TARGET_FOLDER_ID) {
+        // Top folders slide up and fade out
+        tl.to(
+          row,
+          {
+            opacity: 0,
+            y: -50,
+            duration: 0.25,
+            ease: "power2.out",
+          },
+          0
+        );
+      } else {
+        // Bottom folders (5, 6, 7, 8) collapse upwards and slide left to form the left flap!
+        if (targetRow) {
+          const targetRect = targetRow.getBoundingClientRect();
+          const rowRect = row.getBoundingClientRect();
+          const deltaY = targetRect.top - rowRect.top;
+
+          tl.to(
+            row,
+            {
+              y: deltaY,
+              x: -120, // Slide left toward left cover flap
+              scaleY: 0.8,
+              scaleX: 0.5, // Shrink horizontally to stack behind left cover
+              opacity: 0, // Fade out as they merge
+              duration: 0.4,
+              ease: "power2.inOut",
+            },
+            0
+          );
+        }
+      }
     });
 
     // Fade breadcrumb and title
@@ -194,14 +227,15 @@ export const FolderStackAnimation: React.FC = () => {
 
     // ── Stage 2: Direct 3D Reader Morphing (simultaneous opening) ──
     let initialY = 0;
-    let rowHeight = 60;
-    if (targetRow && containerRef.current) {
+    let rowHeight = 40; // Height of the stack tab header
+    if (targetRow && readerRef.current) {
       const targetRect = targetRow.getBoundingClientRect();
-      const containerRect = containerRef.current.getBoundingClientRect();
-      const targetCenterY = targetRect.top - containerRect.top + targetRect.height / 2;
-      const containerCenterY = containerRect.height / 2;
-      initialY = targetCenterY - containerCenterY;
-      rowHeight = targetRect.height;
+      const readerRect = readerRef.current.getBoundingClientRect();
+      
+      const targetCenterY = targetRect.top + rowHeight / 2;
+      const finalCenterY = readerRect.top + 580 / 2;
+      
+      initialY = targetCenterY - finalCenterY;
     }
 
     // Query ReaderView components directly inside the readerLayer
@@ -212,8 +246,7 @@ export const FolderStackAnimation: React.FC = () => {
     const tabs = readerRef.current?.querySelector(`.${styles.rightEdgeTabs}`);
 
     if (readerRef.current) {
-      // Show reader container immediately so we can animate its children
-      tl.set(readerRef.current, { display: "block", opacity: 1 }, 0.2);
+      tl.set(readerRef.current, { opacity: 1 }, 0.2);
     }
 
     if (targetRow) {
@@ -226,27 +259,28 @@ export const FolderStackAnimation: React.FC = () => {
       tl.set(spread, {
         transformOrigin: "center center",
         transformPerspective: 1000,
-        rotateX: 0,
-        rotateY: 0,
+        rotateX: -45, // Tilted forward as if picked up from the top edge
+        rotateY: 20,  // Turned slightly
         y: initialY,
         scaleY: rowHeight / 580, // initial squashed height matching the row height
-        opacity: 0,
+        scaleX: 0.48,            // Closed folder cover width
+        opacity: 1,
       }, 0.2);
     }
 
     if (leftPage) {
       tl.set(leftPage, {
-        rotateY: 85, // Folded back
+        rotateY: 105, // Folded inward
         opacity: 0,
-        boxShadow: "0 30px 60px rgba(0,0,0,0.4)",
+        boxShadow: "0 35px 70px rgba(0,0,0,0.55)",
       }, 0.2);
     }
 
     if (rightPage) {
       tl.set(rightPage, {
-        rotateY: -85, // Folded back
+        rotateY: -105, // Folded inward
         opacity: 0,
-        boxShadow: "0 30px 60px rgba(0,0,0,0.4)",
+        boxShadow: "0 35px 70px rgba(0,0,0,0.55)",
       }, 0.2);
     }
 
@@ -265,23 +299,35 @@ export const FolderStackAnimation: React.FC = () => {
       }, 0.2);
     }
 
-    // ── ANIMATION FLUID STEPS (Simultaneous Morph and Open) ──
+    // ── ANIMATION STEP 1: Move Closed/Squashed Folder to Center ──
     if (spread) {
-      // Lift folder spread out from stack and scale up to full height
+      // Scale up to full height while moving to center position, keeping width closed
       tl.to(spread, {
-        opacity: 1,
         scaleY: 1,
-        y: -15, // Lift off slightly
-        rotateX: -18,
-        rotateY: 30, // 3D tilted
-        duration: 0.5,
+        scaleX: 0.48, // Still closed cover width
+        y: -30, // Centered position Y-offset
+        rotateX: -25, // Tilted towards the user
+        rotateY: 30,  // Angled
+        duration: 0.6,
         ease: "power2.out",
       }, 0.2);
     }
 
-    // Unfold both flaps and settle flat at the same time
-    const openDuration = 0.9;
+    // ── ANIMATION STEP 2: Settle Flat and Swing Both Flaps Open ──
+    const openStart = 0.8;
+    const openDuration = 0.95;
     const openEase = "power3.inOut";
+
+    if (spread) {
+      tl.to(spread, {
+        scaleX: 1, // Opens up and spreads to full double-page width!
+        y: 0,
+        rotateX: 0,
+        rotateY: 0,
+        duration: openDuration,
+        ease: openEase,
+      }, openStart);
+    }
 
     if (leftPage) {
       tl.to(leftPage, {
@@ -290,7 +336,7 @@ export const FolderStackAnimation: React.FC = () => {
         boxShadow: "0 8px 24px rgba(0, 0, 0, 0.2)",
         duration: openDuration,
         ease: openEase,
-      }, 0.45);
+      }, openStart);
     }
 
     if (rightPage) {
@@ -300,17 +346,7 @@ export const FolderStackAnimation: React.FC = () => {
         boxShadow: "0 8px 24px rgba(0, 0, 0, 0.2)",
         duration: openDuration,
         ease: openEase,
-      }, 0.45);
-    }
-
-    if (spread) {
-      tl.to(spread, {
-        y: 0,
-        rotateX: 0,
-        rotateY: 0,
-        duration: openDuration,
-        ease: openEase,
-      }, 0.45);
+      }, openStart);
     }
 
     // Receipt card slides and drops in tactilely
@@ -321,7 +357,7 @@ export const FolderStackAnimation: React.FC = () => {
         rotate: -5,
         duration: 0.65,
         ease: "power2.out",
-      }, 0.75);
+      }, openStart + 0.35);
     }
 
     // Side tabs slide out from the folder edge
@@ -331,7 +367,7 @@ export const FolderStackAnimation: React.FC = () => {
         x: 0,
         duration: 0.55,
         ease: "back.out(1.3)",
-      }, 0.9);
+      }, openStart + 0.5);
     }
 
     // Title scramble + metadata fade in
@@ -474,7 +510,7 @@ export const FolderStackAnimation: React.FC = () => {
 
   const handleTabClick = useCallback(
     (folderId: number, tabLabel: string) => {
-      if (tabLabel === "Peripheral Entry" && folderId === TARGET_FOLDER_ID) {
+      if (folderId === TARGET_FOLDER_ID) {
         handlePeripheralEntryClick();
       } else {
         setActiveFolderId(folderId);
@@ -493,6 +529,8 @@ export const FolderStackAnimation: React.FC = () => {
           pointerEvents: phase === "stack" ? "auto" : "none",
           display: phase === "reader" ? "none" : "block",
           width: "100%",
+          position: phase === "collapsing" ? "relative" : "static",
+          zIndex: phase === "collapsing" ? 2 : "auto",
         }}
       >
         {FOLDERS.map((folder, index) => {
@@ -520,7 +558,11 @@ export const FolderStackAnimation: React.FC = () => {
         className={styles.readerLayer}
         style={{
           display: phase === "reader" || phase === "folder3d" || phase === "collapsing" ? "block" : "none",
-          width: "100%",
+          position: phase === "collapsing" ? "absolute" : "relative",
+          top: phase === "collapsing" ? "24px" : "auto",
+          left: phase === "collapsing" ? "16px" : "auto",
+          width: phase === "collapsing" ? "calc(100% - 32px)" : "100%",
+          zIndex: phase === "collapsing" ? 1 : "auto",
         }}
       >
         {/* Reader content */}

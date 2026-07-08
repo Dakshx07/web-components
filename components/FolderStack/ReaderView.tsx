@@ -148,6 +148,12 @@ export const ReaderView: React.FC<ReaderViewProps> = ({ className }) => {
     >
       {/* ── Two-page spread (solid blue folder backboard) ── */}
       <div className={styles.spreadContainer} ref={containerRef}>
+        <div className={styles.spreadCoverOverlay}>
+          <div className={styles.spreadCoverTabText}>
+            Varnell Collection
+          </div>
+          <div className={styles.spreadCoverBody} />
+        </div>
         {/* ═══ LEFT PAGE — Excerpt A (pink) — Draggable ═══ */}
         <div
           ref={pinkRef}

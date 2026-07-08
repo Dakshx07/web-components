@@ -5,6 +5,7 @@ import gsap from "gsap";
 import { FolderConfig, AnimationPhase } from "./types";
 import { StackRow } from "./StackRow";
 import { ReaderView } from "./ReaderView";
+import { FolderTab } from "./FolderTab";
 import { useTextScramble } from "./TextScramble";
 import styles from "./FolderStackAnimation.module.css";
 
@@ -89,6 +90,60 @@ const FOLDERS: FolderConfig[] = [
   },
 ];
 
+// Programmatic Web Audio API synthesis for a realistic page-turning/folding sound
+const playPaperRustle = (isOpening: boolean) => {
+  if (typeof window === "undefined") return;
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    
+    // Create buffer for white noise (friction)
+    const duration = 0.65;
+    const sampleRate = ctx.sampleRate;
+    const bufferSize = sampleRate * duration;
+    const buffer = ctx.createBuffer(1, bufferSize, sampleRate);
+    const data = buffer.getChannelData(0);
+    
+    // Generate organic noise
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    
+    // Create source
+    const noiseSource = ctx.createBufferSource();
+    noiseSource.buffer = buffer;
+    
+    // BiquadFilter to filter noise into a paper friction/whoosh sound
+    const filter = ctx.createBiquadFilter();
+    filter.type = "bandpass";
+    
+    // Sweet frequency sweep: opening has a higher sweep pitch than closing
+    filter.frequency.setValueAtTime(isOpening ? 180 : 350, ctx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(isOpening ? 420 : 150, ctx.currentTime + 0.55);
+    filter.Q.setValueAtTime(2.0, ctx.currentTime);
+    
+    // Gain Node for envelope shaping
+    const gainNode = ctx.createGain();
+    gainNode.gain.setValueAtTime(0.001, ctx.currentTime);
+    
+    // Fast ramp up for paper movement friction, followed by a smooth ramp down
+    gainNode.gain.linearRampToValueAtTime(isOpening ? 0.08 : 0.05, ctx.currentTime + 0.15);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+    
+    // Connect audio graph
+    noiseSource.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    
+    // Play
+    noiseSource.start();
+    noiseSource.stop(ctx.currentTime + duration);
+  } catch (err) {
+    console.warn("Web Audio API warning:", err);
+  }
+};
+
 const TARGET_FOLDER_ID = 4; // Varnell Collection
 
 export const FolderStackAnimation: React.FC = () => {
@@ -137,6 +192,9 @@ export const FolderStackAnimation: React.FC = () => {
   const handlePeripheralEntryClick = useCallback(() => {
     if (phase !== "stack") return;
 
+    // Trigger the opening sound effect immediately upon click
+    playPaperRustle(true);
+
     // Kill any existing timeline
     if (timelineRef.current) {
       timelineRef.current.kill();
@@ -150,6 +208,12 @@ export const FolderStackAnimation: React.FC = () => {
     timelineRef.current = tl;
 
     setPhase("collapsing");
+
+    const targetRow = rowRefs.current.get(TARGET_FOLDER_ID);
+    const containerRect = containerRef.current?.getBoundingClientRect();
+    const targetRect = targetRow?.getBoundingClientRect();
+    const containerWidth = containerRect ? containerRect.width : 1150;
+    const targetTop = targetRect && containerRect ? targetRect.top - containerRect.top : 120;
 
     // Force display style on readerRef immediately to allow measuring its layout
     if (readerRef.current) {
@@ -169,12 +233,9 @@ export const FolderStackAnimation: React.FC = () => {
       }
     });
 
-    const targetRow = rowRefs.current.get(TARGET_FOLDER_ID);
-
     nonTargetRows.forEach((row) => {
       const rowId = parseInt(row.dataset.rowId || "0");
       if (rowId < TARGET_FOLDER_ID) {
-        // Top folders slide up and fade out
         tl.to(
           row,
           {
@@ -186,26 +247,16 @@ export const FolderStackAnimation: React.FC = () => {
           0
         );
       } else {
-        // Bottom folders (5, 6, 7, 8) collapse upwards and slide left to form the left flap!
-        if (targetRow) {
-          const targetRect = targetRow.getBoundingClientRect();
-          const rowRect = row.getBoundingClientRect();
-          const deltaY = targetRect.top - rowRect.top;
-
-          tl.to(
-            row,
-            {
-              y: deltaY,
-              x: -120, // Slide left toward left cover flap
-              scaleY: 0.8,
-              scaleX: 0.5, // Shrink horizontally to stack behind left cover
-              opacity: 0, // Fade out as they merge
-              duration: 0.4,
-              ease: "power2.inOut",
-            },
-            0
-          );
-        }
+        tl.to(
+          row,
+          {
+            opacity: 0,
+            y: 50,
+            duration: 0.25,
+            ease: "power2.out",
+          },
+          0
+        );
       }
     });
 
@@ -225,7 +276,7 @@ export const FolderStackAnimation: React.FC = () => {
       );
     }
 
-    // ── Stage 2: Direct 3D Reader Morphing (simultaneous opening) ──
+    // ── Stage 2: Direct 3D Folder Transition ──
     let initialY = 0;
     let rowHeight = 40; // Height of the stack tab header
     if (targetRow && readerRef.current) {
@@ -244,43 +295,47 @@ export const FolderStackAnimation: React.FC = () => {
     const rightPage = readerRef.current?.querySelector(`.${styles.rightPage}`);
     const receipt = readerRef.current?.querySelector(`.${styles.receiptWrapper}`);
     const tabs = readerRef.current?.querySelector(`.${styles.rightEdgeTabs}`);
+    const coverOverlay = readerRef.current?.querySelector(`.${styles.spreadCoverOverlay}`);
 
     if (readerRef.current) {
       tl.set(readerRef.current, { opacity: 1 }, 0.2);
     }
 
     if (targetRow) {
-      // Hide stack row exactly when reader animation takes over
+      // Hide stack row exactly when pulling animation starts
       tl.to(targetRow, { opacity: 0, duration: 0.05 }, 0.2);
     }
 
-    // Set initial 3D closed/folded states matching stack row
     if (spread) {
       tl.set(spread, {
         transformOrigin: "center center",
-        transformPerspective: 1000,
-        rotateX: -45, // Tilted forward as if picked up from the top edge
-        rotateY: 20,  // Turned slightly
+        transformPerspective: 1200,
+        rotateX: -20,
+        rotateY: 10,
+        rotateZ: 0,
+        x: 0,
         y: initialY,
-        scaleY: rowHeight / 580, // initial squashed height matching the row height
-        scaleX: 0.48,            // Closed folder cover width
+        scaleX: 0.48,
+        scaleY: 400 / 580,
         opacity: 1,
       }, 0.2);
     }
 
+    if (coverOverlay) {
+      tl.set(coverOverlay, { opacity: 1 }, 0.2);
+    }
+
     if (leftPage) {
       tl.set(leftPage, {
-        rotateY: 105, // Folded inward
-        opacity: 0,
-        boxShadow: "0 35px 70px rgba(0,0,0,0.55)",
+        rotateY: 105, // Fully folded inward (backface hidden)
+        opacity: 0,   // Hide initially to let red cover show
       }, 0.2);
     }
 
     if (rightPage) {
       tl.set(rightPage, {
-        rotateY: -105, // Folded inward
+        rotateY: -105, // Fully folded inward
         opacity: 0,
-        boxShadow: "0 35px 70px rgba(0,0,0,0.55)",
       }, 0.2);
     }
 
@@ -299,33 +354,46 @@ export const FolderStackAnimation: React.FC = () => {
       }, 0.2);
     }
 
-    // ── ANIMATION STEP 1: Move Closed/Squashed Folder to Center ──
+    // ── ANIMATION STEP 1: Move Closed Folder directly to Center ──
     if (spread) {
-      // Scale up to full height while moving to center position, keeping width closed
       tl.to(spread, {
-        scaleY: 1,
-        scaleX: 0.48, // Still closed cover width
-        y: -30, // Centered position Y-offset
-        rotateX: -25, // Tilted towards the user
-        rotateY: 30,  // Angled
-        duration: 0.6,
+        x: 0,
+        y: 0,
+        rotateZ: 0,
+        rotateX: 0,
+        rotateY: 0,
+        scaleX: 0.65,
+        scaleY: 0.65,
+        duration: 0.45,
         ease: "power2.out",
-      }, 0.2);
+      }, 0.25);
     }
 
-    // ── ANIMATION STEP 2: Settle Flat and Swing Both Flaps Open ──
-    const openStart = 0.8;
-    const openDuration = 0.95;
+    // ── ANIMATION STEP 2: Settle flat and swing pages open like a book ──
+    const openStart = 0.7;
+    const openDuration = 0.9;
     const openEase = "power3.inOut";
 
     if (spread) {
       tl.to(spread, {
-        scaleX: 1, // Opens up and spreads to full double-page width!
+        scaleX: 1,
+        scaleY: 1,
+        x: 0,
         y: 0,
+        rotateZ: 0,
         rotateX: 0,
         rotateY: 0,
         duration: openDuration,
         ease: openEase,
+      }, openStart);
+    }
+
+    // Fade out cover overlay to reveal pages inside
+    if (coverOverlay) {
+      tl.to(coverOverlay, {
+        opacity: 0,
+        duration: openDuration * 0.8,
+        ease: "power2.inOut",
       }, openStart);
     }
 
@@ -398,11 +466,29 @@ export const FolderStackAnimation: React.FC = () => {
   }, [phase, scramble]);
 
   const handleReset = useCallback(() => {
+    // Trigger the closing sound effect immediately upon click
+    playPaperRustle(false);
+
     if (timelineRef.current) {
       timelineRef.current.kill();
     }
 
     setPhase("collapsing");
+
+    const targetRow = rowRefs.current.get(TARGET_FOLDER_ID);
+    const containerRect = containerRef.current?.getBoundingClientRect();
+    const targetRect = targetRow?.getBoundingClientRect();
+    const containerWidth = containerRect ? containerRect.width : 1150;
+    
+    let initialY = 0;
+    let rowHeight = 40;
+    if (targetRow && readerRef.current) {
+      const targetRect = targetRow.getBoundingClientRect();
+      const readerRect = readerRef.current.getBoundingClientRect();
+      const targetCenterY = targetRect.top + rowHeight / 2;
+      const finalCenterY = readerRect.top + 580 / 2;
+      initialY = targetCenterY - finalCenterY;
+    }
 
     const tl = gsap.timeline({
       onComplete: () => {
@@ -416,49 +502,115 @@ export const FolderStackAnimation: React.FC = () => {
         if (metadataRef.current) gsap.set(metadataRef.current, { clearProps: "all" });
         if (readerRef.current) {
           gsap.set(readerRef.current, { clearProps: "all", opacity: 0 });
-          
+
           const spread = readerRef.current.querySelector(`.${styles.spreadContainer}`);
           const leftPage = readerRef.current.querySelector(`.${styles.leftPage}`);
           const rightPage = readerRef.current.querySelector(`.${styles.rightPage}`);
           const receipt = readerRef.current.querySelector(`.${styles.receiptWrapper}`);
           const tabs = readerRef.current.querySelector(`.${styles.rightEdgeTabs}`);
-          
+          const coverOverlay = readerRef.current.querySelector(`.${styles.spreadCoverOverlay}`);
+
           if (spread) gsap.set(spread, { clearProps: "all" });
           if (leftPage) gsap.set(leftPage, { clearProps: "all" });
           if (rightPage) gsap.set(rightPage, { clearProps: "all" });
           if (receipt) gsap.set(receipt, { clearProps: "all" });
           if (tabs) gsap.set(tabs, { clearProps: "all" });
+          if (coverOverlay) gsap.set(coverOverlay, { clearProps: "all" });
         }
       },
     });
     timelineRef.current = tl;
 
-    // Fade/scale out reader
+    const spread = readerRef.current?.querySelector(`.${styles.spreadContainer}`);
+    const leftPage = readerRef.current?.querySelector(`.${styles.leftPage}`);
+    const rightPage = readerRef.current?.querySelector(`.${styles.rightPage}`);
+    const receipt = readerRef.current?.querySelector(`.${styles.receiptWrapper}`);
+    const tabs = readerRef.current?.querySelector(`.${styles.rightEdgeTabs}`);
+    const coverOverlay = readerRef.current?.querySelector(`.${styles.spreadCoverOverlay}`);
+
+    // Step 1: Fold spread and pages closed in the center, while bringing coverOverlay back to full opacity
+    if (spread) {
+      tl.to(spread, {
+        scaleX: 0.65,
+        scaleY: 0.65,
+        x: 0,
+        y: 0,
+        rotateZ: 0,
+        rotateX: 0,
+        rotateY: 0,
+        duration: 0.55,
+        ease: "power3.inOut",
+      }, 0);
+    }
+
+    if (coverOverlay) {
+      tl.to(coverOverlay, {
+        opacity: 1,
+        duration: 0.45,
+        ease: "power3.inOut",
+      }, 0);
+    }
+
+    if (leftPage) {
+      tl.to(leftPage, {
+        rotateY: 105,
+        opacity: 0,
+        duration: 0.55,
+        ease: "power3.inOut",
+      }, 0);
+    }
+
+    if (rightPage) {
+      tl.to(rightPage, {
+        rotateY: -105,
+        opacity: 0,
+        duration: 0.55,
+        ease: "power3.inOut",
+      }, 0);
+    }
+
+    if (receipt) {
+      tl.to(receipt, {
+        opacity: 0,
+        y: 80,
+        rotate: 15,
+        duration: 0.45,
+      }, 0);
+    }
+
+    if (tabs) {
+      tl.to(tabs, {
+        opacity: 0,
+        x: -30,
+        duration: 0.4,
+      }, 0);
+    }
+
+    // Step 2: Move the closed folder back down/up to the target row position
+    if (spread) {
+      tl.to(spread, {
+        x: 0,
+        y: initialY,
+        rotateZ: 0,
+        rotateX: -20,
+        rotateY: 10,
+        scaleX: 0.48,
+        scaleY: 400 / 580,
+        duration: 0.45,
+        ease: "power2.inOut",
+      }, 0.55);
+    }
+
+    // Fade/scale out reader layer completely at the end
     if (readerRef.current) {
-      tl.to(
-        readerRef.current,
-        {
-          opacity: 0,
-          scale: 0.95,
-          y: 20,
-          duration: 0.4,
-          ease: "power2.inOut",
-        },
-        0
-      );
+      tl.to(readerRef.current, {
+        opacity: 0,
+        duration: 0.45,
+        ease: "power2.inOut",
+      }, 0.55);
     }
 
-    // Fade/slide in stack layers and title
-    const targetRow = rowRefs.current.get(TARGET_FOLDER_ID);
-    if (targetRow) {
-      tl.fromTo(
-        targetRow,
-        { opacity: 0 },
-        { opacity: 1, duration: 0.3, ease: "power2.out" },
-        0.2
-      );
-    }
-
+    // Fade and bring back non-target rows and title info
     const nonTargetRows: HTMLDivElement[] = [];
     rowRefs.current.forEach((el, id) => {
       if (id !== TARGET_FOLDER_ID && el) {
@@ -467,36 +619,46 @@ export const FolderStackAnimation: React.FC = () => {
     });
 
     nonTargetRows.forEach((row) => {
-      const rowId = parseInt(row.dataset.rowId || "0");
-      const direction = rowId < TARGET_FOLDER_ID ? -1 : 1;
-      tl.fromTo(
+      tl.to(
         row,
-        { opacity: 0, y: direction * 30 },
-        { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
-        0.2
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.45,
+          ease: "power2.inOut",
+        },
+        0.55
       );
     });
 
-    // Fade in breadcrumb
+    // Bring back target row at the end of the animation
+    if (targetRow) {
+      tl.to(targetRow, { opacity: 1, duration: 0.05 }, 0.95);
+    }
+
     if (breadcrumbRef.current) {
-      tl.fromTo(
+      tl.to(
         breadcrumbRef.current,
-        { opacity: 0, y: -10 },
-        { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" },
-        0.2
+        { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
+        0.55
       );
     }
 
-    // Scramble title back
-    tl.call(
-      () => {
-        scramble("Fragment 17B", "Fragments 15–20");
-      },
-      [],
-      0.1
-    );
+    if (titleRef.current) {
+      tl.call(
+        () => {
+          scramble("Fragment 17B", "Fragments 15–20");
+        },
+        [],
+        0.55
+      );
+      tl.to(
+        titleRef.current,
+        { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
+        0.55
+      );
+    }
 
-    // Hide metadata
     if (metadataRef.current) {
       tl.to(
         metadataRef.current,
@@ -507,7 +669,6 @@ export const FolderStackAnimation: React.FC = () => {
 
     tl.play();
   }, [scramble]);
-
   const handleTabClick = useCallback(
     (folderId: number, tabLabel: string) => {
       if (folderId === TARGET_FOLDER_ID) {
@@ -521,6 +682,8 @@ export const FolderStackAnimation: React.FC = () => {
 
   return (
     <div className={styles.animationContainer} ref={containerRef}>
+
+
       {/* ── Stack layer ── */}
       <div
         className={styles.stackLayer}

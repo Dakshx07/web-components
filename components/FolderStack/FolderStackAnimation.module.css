@@ -347,12 +347,50 @@
   align-items: stretch;
   position: relative;
   min-height: 580px;
-  background: #2255CC;
+  background: #2255CC; /* Solid blue backboard */
   padding: 32px;
   gap: 20px;
   border-radius: 0 0 8px 8px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
   transform-style: preserve-3d;
+}
+
+.spreadCoverOverlay {
+  position: absolute;
+  inset: -28px 0 0 0; /* Extend 28px above for the tab */
+  z-index: 10;
+  pointer-events: none;
+  background-color: #D6231B;
+  /* Tab at top-left, slanted right flap */
+  clip-path: polygon(0 28px, 20px 28px, 35px 0, 185px 0, 200px 28px, 100% 28px, 80% 100%, 0 100%);
+  border-radius: 0 0 8px 8px;
+}
+
+.spreadCoverTabText {
+  position: absolute;
+  top: 0;
+  left: 35px;
+  width: 150px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body-serif), Georgia, serif;
+  font-style: italic;
+  font-size: 14px;
+  font-weight: 400;
+  color: #FFFFFF;
+  letter-spacing: 0.02em;
+}
+
+.spreadCoverBody {
+  position: absolute;
+  top: 28px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #D6231B;
+  border-radius: 0 0 8px 8px;
 }
 
 @media (max-width: 767px) {

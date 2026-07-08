@@ -341,13 +341,12 @@
   font-weight: 500;
 }
 
-/* ── Two-page spread (Solid Blue Folder Backboard) ── */
 .spreadContainer {
   display: flex;
   align-items: stretch;
   position: relative;
   min-height: 580px;
-  background: #2255CC; /* Solid blue backboard */
+  background: transparent; /* Animates to solid blue in GSAP on open */
   padding: 32px;
   gap: 20px;
   border-radius: 0 0 8px 8px;

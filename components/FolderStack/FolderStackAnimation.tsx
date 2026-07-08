@@ -318,6 +318,7 @@ export const FolderStackAnimation: React.FC = () => {
         scaleX: 0.48,
         scaleY: 400 / 580,
         opacity: 1,
+        backgroundColor: "rgba(34, 85, 204, 0)",
       }, 0.2);
     }
 
@@ -354,7 +355,10 @@ export const FolderStackAnimation: React.FC = () => {
       }, 0.2);
     }
 
-    // ── ANIMATION STEP 1: Move Closed Folder directly to Center ──
+    // ── UNIFIED FLUID TRANSITION: Centering & Opening Simultaneously ──
+    const openDuration = 0.95;
+    const openEase = "power3.out";
+
     if (spread) {
       tl.to(spread, {
         x: 0,
@@ -362,41 +366,24 @@ export const FolderStackAnimation: React.FC = () => {
         rotateZ: 0,
         rotateX: 0,
         rotateY: 0,
-        scaleX: 0.65,
-        scaleY: 0.65,
-        duration: 0.45,
-        ease: "power2.out",
+        scaleX: 1,
+        scaleY: 1,
+        backgroundColor: "rgba(34, 85, 204, 1)",
+        duration: openDuration,
+        ease: openEase,
       }, 0.25);
     }
 
-    // ── ANIMATION STEP 2: Settle flat and swing pages open like a book ──
-    const openStart = 0.7;
-    const openDuration = 0.9;
-    const openEase = "power3.inOut";
-
-    if (spread) {
-      tl.to(spread, {
-        scaleX: 1,
-        scaleY: 1,
-        x: 0,
-        y: 0,
-        rotateZ: 0,
-        rotateX: 0,
-        rotateY: 0,
-        duration: openDuration,
-        ease: openEase,
-      }, openStart);
-    }
-
-    // Fade out cover overlay to reveal pages inside
+    // Fade out cover overlay to reveal the pages
     if (coverOverlay) {
       tl.to(coverOverlay, {
         opacity: 0,
-        duration: openDuration * 0.8,
+        duration: openDuration * 0.75,
         ease: "power2.inOut",
-      }, openStart);
+      }, 0.25);
     }
 
+    // Swing pages open in 3D
     if (leftPage) {
       tl.to(leftPage, {
         rotateY: 0,
@@ -404,7 +391,7 @@ export const FolderStackAnimation: React.FC = () => {
         boxShadow: "0 8px 24px rgba(0, 0, 0, 0.2)",
         duration: openDuration,
         ease: openEase,
-      }, openStart);
+      }, 0.25);
     }
 
     if (rightPage) {
@@ -414,7 +401,7 @@ export const FolderStackAnimation: React.FC = () => {
         boxShadow: "0 8px 24px rgba(0, 0, 0, 0.2)",
         duration: openDuration,
         ease: openEase,
-      }, openStart);
+      }, 0.25);
     }
 
     // Receipt card slides and drops in tactilely
@@ -425,7 +412,7 @@ export const FolderStackAnimation: React.FC = () => {
         rotate: -5,
         duration: 0.65,
         ease: "power2.out",
-      }, openStart + 0.35);
+      }, 0.65);
     }
 
     // Side tabs slide out from the folder edge
@@ -435,7 +422,7 @@ export const FolderStackAnimation: React.FC = () => {
         x: 0,
         duration: 0.55,
         ease: "back.out(1.3)",
-      }, openStart + 0.5);
+      }, 0.75);
     }
 
     // Title scramble + metadata fade in
@@ -529,25 +516,29 @@ export const FolderStackAnimation: React.FC = () => {
     const coverOverlay = readerRef.current?.querySelector(`.${styles.spreadCoverOverlay}`);
 
     // Step 1: Fold spread and pages closed in the center, while bringing coverOverlay back to full opacity
+    const closeDuration = 0.85;
+    const closeEase = "power3.inOut";
+
     if (spread) {
       tl.to(spread, {
-        scaleX: 0.65,
-        scaleY: 0.65,
+        scaleX: 0.48,
+        scaleY: 400 / 580,
         x: 0,
-        y: 0,
+        y: initialY,
         rotateZ: 0,
-        rotateX: 0,
-        rotateY: 0,
-        duration: 0.55,
-        ease: "power3.inOut",
+        rotateX: -20,
+        rotateY: 10,
+        backgroundColor: "rgba(34, 85, 204, 0)",
+        duration: closeDuration,
+        ease: closeEase,
       }, 0);
     }
 
     if (coverOverlay) {
       tl.to(coverOverlay, {
         opacity: 1,
-        duration: 0.45,
-        ease: "power3.inOut",
+        duration: closeDuration * 0.75,
+        ease: closeEase,
       }, 0);
     }
 
@@ -555,8 +546,8 @@ export const FolderStackAnimation: React.FC = () => {
       tl.to(leftPage, {
         rotateY: 105,
         opacity: 0,
-        duration: 0.55,
-        ease: "power3.inOut",
+        duration: closeDuration,
+        ease: closeEase,
       }, 0);
     }
 
@@ -564,8 +555,8 @@ export const FolderStackAnimation: React.FC = () => {
       tl.to(rightPage, {
         rotateY: -105,
         opacity: 0,
-        duration: 0.55,
-        ease: "power3.inOut",
+        duration: closeDuration,
+        ease: closeEase,
       }, 0);
     }
 
@@ -574,7 +565,7 @@ export const FolderStackAnimation: React.FC = () => {
         opacity: 0,
         y: 80,
         rotate: 15,
-        duration: 0.45,
+        duration: 0.4,
       }, 0);
     }
 
@@ -586,28 +577,13 @@ export const FolderStackAnimation: React.FC = () => {
       }, 0);
     }
 
-    // Step 2: Move the closed folder back down/up to the target row position
-    if (spread) {
-      tl.to(spread, {
-        x: 0,
-        y: initialY,
-        rotateZ: 0,
-        rotateX: -20,
-        rotateY: 10,
-        scaleX: 0.48,
-        scaleY: 400 / 580,
-        duration: 0.45,
-        ease: "power2.inOut",
-      }, 0.55);
-    }
-
     // Fade/scale out reader layer completely at the end
     if (readerRef.current) {
       tl.to(readerRef.current, {
         opacity: 0,
-        duration: 0.45,
-        ease: "power2.inOut",
-      }, 0.55);
+        duration: closeDuration,
+        ease: closeEase,
+      }, 0);
     }
 
     // Fade and bring back non-target rows and title info
@@ -624,16 +600,16 @@ export const FolderStackAnimation: React.FC = () => {
         {
           opacity: 1,
           y: 0,
-          duration: 0.45,
-          ease: "power2.inOut",
+          duration: closeDuration,
+          ease: closeEase,
         },
-        0.55
+        0
       );
     });
 
     // Bring back target row at the end of the animation
     if (targetRow) {
-      tl.to(targetRow, { opacity: 1, duration: 0.05 }, 0.95);
+      tl.to(targetRow, { opacity: 1, duration: 0.05 }, closeDuration);
     }
 
     if (breadcrumbRef.current) {

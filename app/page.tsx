@@ -1,10 +1,15 @@
 import { FolderStack } from "@/components/FolderStack/FolderStack";
+import { ReferenceInspector } from "@/components/ReferenceInspector/ReferenceInspector";
 
 export default function Home() {
   return (
-    <main className="h-screen w-full flex items-center justify-center bg-[#0C0C0D] overflow-hidden">
+    <main className="min-h-screen w-full bg-[#0C0C0D] relative">
       {/* Folder Stack Component */}
       <FolderStack />
+
+      {/* Ground-Truth Continuous Loop & Scrubber Inspector */}
+      <ReferenceInspector />
     </main>
   );
 }
+

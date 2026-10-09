@@ -1,16 +1,46 @@
 export interface TabConfig {
   label: string;
   color: string;
+  textColor?: string;
+  slug?: string;
+}
+
+export interface ScrapbookItem {
+  id: string;
+  type: "photo" | "postcard" | "note" | "drawing";
+  title?: string;
+  desc?: string;
+  src?: string;
+  width: number;
+  height?: number;
+  initialX: number;
+  initialY: number;
+  rotation: number;
+  zIndex: number;
+}
+
+export interface ArchitectCase {
+  slug: string;
+  name: string;
+  color: string;
   textColor: string;
+  theme: "dark" | "light";
+  born: string;
+  died: string;
+  location: string;
+  portrait: string;
+  leadParagraph: string;
+  dropCap: string;
+  bodyParagraphs: string[];
+  scrapbookItems: ScrapbookItem[];
 }
 
-export interface FolderConfig {
-  id: number;
+export interface FolderGroupConfig {
+  groupId: number;
+  category: string;
   primaryColor: string;
-  tabs: TabConfig[];
-  contentId: string;
-  contentDate: string;
-  contentText: string;
+  description: string;
+  cases: ArchitectCase[];
 }
 
-export type AnimationPhase = "stack" | "collapsing" | "folder3d" | "reader";
+export type AnimationPhase = "stack" | "collapsing" | "unfolding" | "case-view";

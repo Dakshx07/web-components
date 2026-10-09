@@ -2,760 +2,652 @@
 
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import gsap from "gsap";
-import { FolderConfig, AnimationPhase } from "./types";
-import { StackRow } from "./StackRow";
-import { ReaderView } from "./ReaderView";
+import Lenis from "lenis";
+import { FolderGroupConfig, AnimationPhase } from "./types";
 import { FolderTab } from "./FolderTab";
-import { useTextScramble } from "./TextScramble";
+import { ReaderView } from "./ReaderView";
 import styles from "./FolderStackAnimation.module.css";
+import { soundFx } from "./soundFx";
 
-const FOLDERS: FolderConfig[] = [
+declare global {
+  interface Window {
+    __lenis?: Lenis;
+  }
+}
+
+// Authentic Mosby Files Architecture Archive Data
+export const FOLDER_GROUPS: FolderGroupConfig[] = [
   {
-    id: 1,
-    primaryColor: "#8E1A5A",
-    tabs: [{ label: "Lexical Interruptions", color: "#8E1A5A", textColor: "#FFFFFF" }],
-    contentId: "18A",
-    contentDate: "Oct 04, 1952",
-    contentText: "Transcripts incomplete.\nAlternate readings suggested.\nMetadata lost during compilation.",
-  },
-  {
-    id: 2,
-    primaryColor: "#D9622B",
-    tabs: [
-      { label: "Concord Variants", color: "#D9622B", textColor: "#FFFFFF" },
-      { label: "Ink Displacement", color: "#2337B5", textColor: "#FFFFFF" },
-      { label: "Referent Ghosts", color: "#111111", textColor: "#FFFFFF" },
+    groupId: 0,
+    category: "Organic & Early Modernism",
+    primaryColor: "#194BFD",
+    description:
+      "The movement that broke from European convention before Europe finished writing its manifesto. Buildings designed around human life, natural landscape, and open space — where structure followed environment, not the other way around. The root system beneath everything American Modernism would later become.",
+    cases: [
+      {
+        slug: "frank-lloyd-wright",
+        name: "Frank Lloyd Wright",
+        color: "#194BFD",
+        textColor: "#FFFFFF",
+        theme: "dark",
+        born: "June 8, 1867, Richland Center, Wisconsin, US",
+        died: "April 9, 1959 (age 91), Phoenix, Arizona, US",
+        location: "Oak Park, Illinois & Spring Green, Wisconsin",
+        portrait: "/images/architects/frank-lloyd-wright.avif",
+        dropCap: "H",
+        leadParagraph:
+          "e broke the tyranny of the box: dissolving corners, layering sightlines, letting rooms unfold like thought. And he didn’t stop at walls—light fixtures, furniture, vents, even screws were part of the same vision. Architecture, for Wright, was total.",
+        bodyParagraphs: [
+          "Prairie School wasn’t a style; it was a philosophy of the horizontal plain, anchored to the midwestern earth with heavy masonry chimneys and sweeping overhangs.",
+          "Decades before organic architecture became a catchphrase, Wright treated reinforced concrete, glass, and local stone as living organisms whose purpose was to elevate human consciousness.",
+        ],
+        scrapbookItems: [],
+      },
+      {
+        slug: "irving-gill",
+        name: "Irving Gill",
+        color: "#D7281D",
+        textColor: "#FFFFFF",
+        theme: "dark",
+        born: "April 22, 1870, Tully, New York, US",
+        died: "October 7, 1936 (age 66), Carlsbad, California, US",
+        location: "San Diego & Los Angeles, California",
+        portrait: "/images/architects/irving-gill.avif",
+        dropCap: "P",
+        leadParagraph:
+          "ioneer of tilt-up concrete slabs and unadorned cubist geometry. Gill stripped architecture down to pure sunlight and silent plane decades before the European avant-garde.",
+        bodyParagraphs: [
+          "In the dry glare of Southern California, Gill eliminated mouldings, baseboards, and decorative clutter, creating sanitarily pure interiors lit by arched arcades.",
+        ],
+        scrapbookItems: [],
+      },
     ],
-    contentId: "18B",
-    contentDate: "Nov 12, 1954",
-    contentText: "Variant readings confirmed in\nthree separate manuscripts.\nInk chemical analysis pending.",
   },
   {
-    id: 3,
-    primaryColor: "#12876B",
-    tabs: [{ label: "Unanchored Statements", color: "#12876B", textColor: "#FFFFFF" }],
-    contentId: "17A",
-    contentDate: "Jan 29, 1955",
-    contentText: "Isolated declarations found\nin margins. Syntactic connection\nto main text unresolved.",
+    groupId: 1,
+    category: "Expressive",
+    primaryColor: "#0F7E53",
+    description:
+      "A radical departure from rectilinear rigidity into sculptural dynamism. Architecture that bends, folds, and collides with convention, questioning the boundary between structural enclosure and expressive monumental sculpture.",
+    cases: [
+      {
+        slug: "frank-gehry",
+        name: "Frank Gehry",
+        color: "#0F7E53",
+        textColor: "#FFFFFF",
+        theme: "dark",
+        born: "February 28, 1929, Toronto, Ontario, Canada",
+        died: "Active",
+        location: "Los Angeles, California",
+        portrait: "/images/architects/frank-gehry.avif",
+        dropCap: "W",
+        leadParagraph:
+          "hat if a building could capture the fluid gesture of an artist’s sketch? Gehry collided industrial chain-link, titanium curves, and fractured plywood into breathtaking spatial poetry.",
+        bodyParagraphs: [
+          "Rejecting the sterile corporate curtain-wall, his work reimagined the city as a landscape of dynamic, dancing sculptural forms.",
+        ],
+        scrapbookItems: [],
+      },
+    ],
   },
   {
-    id: 4,
+    groupId: 2,
+    category: "Monumental Modernism",
+    primaryColor: "#7E1A7A",
+    description:
+      "Architecture at the scale of civilization — civic, institutional, and built to outlast the moment. These buildings draw on mass, geometry, and the precise control of light to create spaces that feel both inevitable and timeless. Modernism stripped of sentimentality, left with only what matters.",
+    cases: [
+      {
+        slug: "louis-kahn",
+        name: "Louis Kahn",
+        color: "#7E1A7A",
+        textColor: "#FFFFFF",
+        theme: "dark",
+        born: "March 5, 1901, Kuressaare, Estonia",
+        died: "March 17, 1974 (age 73), New York City, US",
+        location: "Philadelphia, Pennsylvania",
+        portrait: "/images/architects/louis-kahn.avif",
+        dropCap: "T",
+        leadParagraph:
+          "he sun never knew how great it was until it struck the side of a building. Kahn gave monolithic poured concrete the spiritual gravity of ancient Roman ruins.",
+        bodyParagraphs: [
+          "From the Salk Institute overlooking the Pacific to the National Parliament of Bangladesh, Kahn organized served and servant spaces with geometric purity.",
+        ],
+        scrapbookItems: [],
+      },
+      {
+        slug: "i-m-pei",
+        name: "I. M. Pei",
+        color: "#F3CA28",
+        textColor: "#000000",
+        theme: "light",
+        born: "April 26, 1917, Guangzhou, China",
+        died: "May 16, 2019 (age 102), New York City, US",
+        location: "New York City, US",
+        portrait: "/images/architects/i-m-pei.avif",
+        dropCap: "M",
+        leadParagraph:
+          "aster of crystalline geometry and razor-sharp poured concrete. Pei fused Eastern restraint with monumental Western civic ambitions.",
+        bodyParagraphs: [
+          "His trapezoids and glass pyramids redefined the National Gallery East Building and the Grand Louvre with breathtaking precision.",
+        ],
+        scrapbookItems: [],
+      },
+      {
+        slug: "paul-rudolph",
+        name: "Paul Rudolph",
+        color: "#111111",
+        textColor: "#FFFFFF",
+        theme: "dark",
+        born: "October 23, 1918, Elkton, Kentucky, US",
+        died: "August 8, 1997 (age 78), New York City, US",
+        location: "Sarasota, Florida & New Haven, Connecticut",
+        portrait: "/images/architects/paul-rudolph.avif",
+        dropCap: "C",
+        leadParagraph:
+          "hiseled corduroy ribbed concrete and dizzying multi-level interlocking planes. Rudolph pushed American Brutalism to its most dramatic spatial extremes.",
+        bodyParagraphs: [
+          "The Yale Art & Architecture Building remains a towering manifesto of 37 interlocking levels compressed into seven floors of intense heroic light.",
+        ],
+        scrapbookItems: [],
+      },
+    ],
+  },
+  {
+    groupId: 3,
+    category: "Contextual & Transitional Architecture",
     primaryColor: "#D6231B",
-    tabs: [
-      { label: "Varnell Collection", color: "#D6231B", textColor: "#FFFFFF" },
-      { label: "Peripheral Entry", color: "#2255CC", textColor: "#FFFFFF" },
+    description:
+      "Architecture shaped by place, culture, and continuity rather than formal invention alone. Mix of tradition and modernity through local materials, historical reference, and environmental logic that resist the impulse to impose and choose instead to belong. A quiet but foundational thread in the fabric of American architectural identity.",
+    cases: [
+      {
+        slug: "mary-colter",
+        name: "Mary Colter",
+        color: "#D6231B",
+        textColor: "#FFFFFF",
+        theme: "dark",
+        born: "April 4, 1869, Pittsburgh, Pennsylvania, US",
+        died: "January 8, 1958 (age 88), Santa Fe, New Mexico, US",
+        location: "Grand Canyon National Park, Arizona",
+        portrait: "/images/architects/mary-colter.avif",
+        dropCap: "W",
+        leadParagraph:
+          "hile others designed buildings, Mary Colter designed encounters. Long before “experience design” became a discipline, she was choreographing how a visitor approaches the rim, where they pause, what they see framed against the horizon. Architecture, for Colter, was staging—but never stage set.",
+        bodyParagraphs: [
+          "Her structures at the Grand Canyon don’t compete with the landscape; they disguise themselves within it. Stone bleeds into cliff. Rooflines echo ridges. She blended Pueblo, tribal, and Spanish Colonial references into a language that felt native rather than imposed—often hiring indigenous artists and craftspeople to execute murals and stonework.",
+          "As primary architect for the Fred Harvey Company and the Santa Fe Railway, she invented an American vernacular out of raw desert rock and ancient timber.",
+        ],
+        scrapbookItems: [
+          {
+            id: "hopi-house-note",
+            type: "note",
+            title: "HOPI HOUSE (1905)",
+            desc: "A marketplace shaped like a terraced Pueblo dwelling, built with local Kaibab limestone to honor indigenous craftsmen.",
+            width: 260,
+            initialX: 40,
+            initialY: 420,
+            rotation: -2,
+            zIndex: 10,
+          },
+          {
+            id: "postcard-1",
+            type: "postcard",
+            src: "/images/architects/postcard.avif",
+            width: 240,
+            initialX: 180,
+            initialY: 280,
+            rotation: 3,
+            zIndex: 12,
+          },
+          {
+            id: "hopi-drawing",
+            type: "drawing",
+            src: "/images/architects/hopi-house-drawing.avif",
+            width: 320,
+            initialX: 260,
+            initialY: 410,
+            rotation: -1,
+            zIndex: 15,
+          },
+        ],
+      },
+      {
+        slug: "louis-sullivan",
+        name: "Louis Sullivan",
+        color: "#1B49DC",
+        textColor: "#FFFFFF",
+        theme: "dark",
+        born: "September 3, 1856, Boston, Massachusetts, US",
+        died: "April 14, 1924 (age 67), Chicago, Illinois, US",
+        location: "Chicago, Illinois & St. Louis, Missouri",
+        portrait: "/images/architects/louis-sullivan.avif",
+        dropCap: "L",
+        leadParagraph:
+          "ouis Sullivan gave the skyscraper its grammar. While steel frames were already rising in Chicago, he made height legible. Not a stack of floors—a vertical organism with base, shaft, and crown. Structure became sentence.",
+        bodyParagraphs: [
+          "In 1896, he wrote the line that would echo across continents: form ever follows function. For Sullivan, this wasn't austerity. Function generated expression. Offices demanded vertical rhythm; retail demanded openness at the corner. Even his ornament—lush, botanical, tightly disciplined—grew from structure rather than masking it. Controlled organicism, never chaos.",
+          "In the Wainwright Building and the Guaranty Building, he translated iron engineering into architectural dignity.",
+        ],
+        scrapbookItems: [],
+      },
     ],
-    contentId: "17B",
-    contentDate: "Mar 18, 1966",
-    contentText: "Filed without origin.\nReferenced frequently,\nyet seldom cited in full.",
-  },
-  {
-    id: 5,
-    primaryColor: "#5B2A86",
-    tabs: [
-      { label: "Subject Drift", color: "#5B2A86", textColor: "#FFFFFF" },
-      { label: "Duplicated Silence", color: "#D6231B", textColor: "#FFFFFF" },
-      { label: "Margin Events", color: "#ECE01B", textColor: "#111111" },
-    ],
-    contentId: "16A",
-    contentDate: "Dec 13, 1956",
-    contentText: "Provenance unclear.\nPart of unidentified collection.\nFurther context unavailable.",
-  },
-  {
-    id: 6,
-    primaryColor: "#2255CC",
-    tabs: [{ label: "Reverse Index", color: "#2255CC", textColor: "#FFFFFF" }],
-    contentId: "16B",
-    contentDate: "Dec 13, 1956",
-    contentText: "Context unknown.\nConnection to other\nrecords not confirmed.\nProcessing ongoing.",
-  },
-  {
-    id: 7,
-    primaryColor: "#D6437A",
-    tabs: [
-      { label: "Obscured Provenance", color: "#D6437A", textColor: "#FFFFFF" },
-      { label: "Undated Persuasions", color: "#ECE01B", textColor: "#111111" },
-    ],
-    contentId: "15B",
-    contentDate: "May 02, 1961",
-    contentText: "Origin details redacted\nby authority. Material evidence\nsuggests external source.",
-  },
-  {
-    id: 8,
-    primaryColor: "#2255CC",
-    tabs: [{ label: "No Verified", color: "#2255CC", textColor: "#FFFFFF" }],
-    contentId: "15C",
-    contentDate: "Mar 18, 1966",
-    contentText: "Believed to be part of a\nlarger set. No other\nparts located.\n\nReferent unknown.\nSource pending.",
   },
 ];
 
-// Programmatic Web Audio API synthesis for a realistic page-turning/folding sound
-const playPaperRustle = (isOpening: boolean) => {
-  if (typeof window === "undefined") return;
-  try {
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContextClass) return;
-    const ctx = new AudioContextClass();
-    
-    // Create buffer for white noise (friction)
-    const duration = 0.65;
-    const sampleRate = ctx.sampleRate;
-    const bufferSize = sampleRate * duration;
-    const buffer = ctx.createBuffer(1, bufferSize, sampleRate);
-    const data = buffer.getChannelData(0);
-    
-    // Generate organic noise
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
-    
-    // Create source
-    const noiseSource = ctx.createBufferSource();
-    noiseSource.buffer = buffer;
-    
-    // BiquadFilter to filter noise into a paper friction/whoosh sound
-    const filter = ctx.createBiquadFilter();
-    filter.type = "bandpass";
-    
-    // Sweet frequency sweep: opening has a higher sweep pitch than closing
-    filter.frequency.setValueAtTime(isOpening ? 180 : 350, ctx.currentTime);
-    filter.frequency.exponentialRampToValueAtTime(isOpening ? 420 : 150, ctx.currentTime + 0.55);
-    filter.Q.setValueAtTime(2.0, ctx.currentTime);
-    
-    // Gain Node for envelope shaping
-    const gainNode = ctx.createGain();
-    gainNode.gain.setValueAtTime(0.001, ctx.currentTime);
-    
-    // Fast ramp up for paper movement friction, followed by a smooth ramp down
-    gainNode.gain.linearRampToValueAtTime(isOpening ? 0.08 : 0.05, ctx.currentTime + 0.15);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
-    
-    // Connect audio graph
-    noiseSource.connect(filter);
-    filter.connect(gainNode);
-    gainNode.connect(ctx.destination);
-    
-    // Play
-    noiseSource.start();
-    noiseSource.stop(ctx.currentTime + duration);
-  } catch (err) {
-    console.warn("Web Audio API warning:", err);
-  }
-};
-
-const TARGET_FOLDER_ID = 4; // Varnell Collection
-
 export const FolderStackAnimation: React.FC = () => {
   const [phase, setPhase] = useState<AnimationPhase>("stack");
-  const [activeFolderId, setActiveFolderId] = useState<number>(4);
-  const [titleText, setTitleText] = useState("Fragments 15–20");
+  const [hoveredGroupId, setHoveredGroupId] = useState<number>(-1);
+  const [activeGroupIndex, setActiveGroupIndex] = useState<number>(3); // Default to Group 4 (Contextual: Mary Colter & Louis Sullivan)
+  const [activeCaseIndex, setActiveCaseIndex] = useState<number>(0); // Default to Mary Colter
 
-  // Refs for animation targets
-  const containerRef = useRef<HTMLDivElement>(null);
+  // Refs for GSAP choreography
   const stackRef = useRef<HTMLDivElement>(null);
-  const rowRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
-  const readerRef = useRef<HTMLDivElement>(null);
-  const breadcrumbRef = useRef<HTMLDivElement>(null);
-  const titleRef = useRef<HTMLDivElement>(null);
-  const metadataRef = useRef<HTMLDivElement>(null);
-  const timelineRef = useRef<gsap.core.Timeline | null>(null);
+  const groupRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
+  const heroTitleRef = useRef<HTMLHeadingElement>(null);
+  const heroDescRef = useRef<HTMLParagraphElement>(null);
 
-  const { displayText, scramble } = useTextScramble("Fragments 15–20", {
-    speed: 1,
-    tickInterval: 30,
-  });
+  // Case view refs for enter animation
+  const caseCoverRef = useRef<HTMLDivElement | null>(null);
+  const caseTagsRef = useRef<HTMLDivElement | null>(null);
+  const caseScrapbookRef = useRef<HTMLDivElement | null>(null);
+  const caseHeroTitleRef = useRef<HTMLHeadingElement | null>(null);
 
-  // Update titleText from scramble
-  useEffect(() => {
-    setTitleText(displayText);
-  }, [displayText]);
+  const activeGroup = FOLDER_GROUPS[activeGroupIndex];
+  const activeCase = activeGroup?.cases[activeCaseIndex] || activeGroup?.cases[0];
 
-  const setRowRef = useCallback((id: number) => {
+  const setGroupRef = useCallback((id: number) => {
     return (el: HTMLDivElement | null) => {
-      rowRefs.current.set(id, el);
+      groupRefs.current.set(id, el);
     };
   }, []);
 
-  // Create a ref callback that works with forwardRef
-  const createRowRef = useCallback((id: number): React.RefObject<HTMLDivElement | null> => {
-    return {
-      get current() {
-        return rowRefs.current.get(id) || null;
-      },
-      set current(el: HTMLDivElement | null) {
-        rowRefs.current.set(id, el);
-      },
+  // Initialize Lenis for authentic buttery-smooth scrolling
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    let lenis: Lenis | null = null;
+    let animId: number;
+
+    try {
+      lenis = new Lenis({
+        duration: 1.2,
+        easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      });
+
+      window.__lenis = lenis;
+
+      function raf(time: number) {
+        lenis?.raf(time);
+        animId = requestAnimationFrame(raf);
+      }
+      animId = requestAnimationFrame(raf);
+    } catch (e) {
+      console.warn("Lenis initialization error:", e);
+    }
+
+    return () => {
+      cancelAnimationFrame(animId);
+      lenis?.destroy();
     };
   }, []);
 
-  const handlePeripheralEntryClick = useCallback(() => {
-    if (phase !== "stack") return;
-
-    // Trigger the opening sound effect immediately upon click
-    playPaperRustle(true);
-
-    // Kill any existing timeline
-    if (timelineRef.current) {
-      timelineRef.current.kill();
-    }
-
-    const tl = gsap.timeline({
-      onComplete: () => {
-        setPhase("reader");
-      },
-    });
-    timelineRef.current = tl;
-
-    setPhase("collapsing");
-
-    const targetRow = rowRefs.current.get(TARGET_FOLDER_ID);
-    const containerRect = containerRef.current?.getBoundingClientRect();
-    const targetRect = targetRow?.getBoundingClientRect();
-    const containerWidth = containerRect ? containerRect.width : 1150;
-    const targetTop = targetRect && containerRect ? targetRect.top - containerRect.top : 120;
-
-    // Force display style on readerRef immediately to allow measuring its layout
-    if (readerRef.current) {
-      readerRef.current.style.display = "block";
-      readerRef.current.style.position = "absolute";
-      readerRef.current.style.top = "24px";
-      readerRef.current.style.left = "16px";
-      readerRef.current.style.width = "calc(100% - 32px)";
-      readerRef.current.style.zIndex = "1";
-    }
-
-    // ── Stage 1 (0–0.25s): Fade/slide non-target rows ──
-    const nonTargetRows: HTMLDivElement[] = [];
-    rowRefs.current.forEach((el, id) => {
-      if (id !== TARGET_FOLDER_ID && el) {
-        nonTargetRows.push(el);
+  // Recalculate Lenis scroll dimensions whenever phase or case changes
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const timer = setTimeout(() => {
+      if (window.__lenis) {
+        window.__lenis.resize();
       }
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [phase, activeCaseIndex]);
+
+  // Open Folder animation: matches exact Mosby DwAQhwlc.js (Dct + kct)
+  const handleOpenFolder = (groupIndex: number, caseIndex: number) => {
+    if (phase === "unfolding") return;
+
+    soundFx.playFolderFlap();
+
+    setActiveGroupIndex(groupIndex);
+    setActiveCaseIndex(caseIndex);
+
+    // 1. Leave Timeline: Drop sibling folders and hero text
+    const tlLeave = gsap.timeline({
+      defaults: { ease: "power2.out", duration: 0.75 },
     });
 
-    nonTargetRows.forEach((row) => {
-      const rowId = parseInt(row.dataset.rowId || "0");
-      if (rowId < TARGET_FOLDER_ID) {
-        tl.to(
-          row,
-          {
-            opacity: 0,
-            y: -50,
-            duration: 0.25,
-            ease: "power2.out",
-          },
-          0
-        );
-      } else {
-        tl.to(
-          row,
-          {
-            opacity: 0,
-            y: 50,
-            duration: 0.25,
-            ease: "power2.out",
-          },
-          0
-        );
-      }
+    if (heroDescRef.current) {
+      tlLeave.to(heroDescRef.current, { y: "2rem", opacity: 0, duration: 0.45 }, 0.05);
+    }
+    if (heroTitleRef.current) {
+      tlLeave.to(heroTitleRef.current, { y: "2rem", opacity: 0, duration: 0.45, stagger: -0.05 }, 0.15);
+    }
+
+    const allGroups = Array.from(groupRefs.current.entries());
+    const siblings = allGroups
+      .filter(([id]) => id !== groupIndex)
+      .map(([, el]) => el)
+      .filter(Boolean);
+
+    tlLeave.to(siblings, { yPercent: 120, stagger: 0.1, duration: 0.75 }, 0);
+
+    // Transition into case view after sibling drop
+    tlLeave.call(() => {
+      setPhase("case-view");
+
+      // Scroll smoothly to top
+      window.scrollTo({ top: 0, behavior: "instant" });
+
+      // Run FolderOpenEnter timeline (kct) once mounted
+      setTimeout(() => {
+        const tlEnter = gsap.timeline({
+          defaults: { ease: "power3.inOut", duration: 1.5 },
+        });
+
+        // 3D Flap Cover rotation around left spine: 0 to -180deg
+        if (caseCoverRef.current) {
+          const shadow = caseCoverRef.current.querySelector(`.${styles.caseFolderCoverShadow}`);
+
+          tlEnter.fromTo(
+            caseCoverRef.current,
+            { rotateY: 0 },
+            { rotateY: -180, duration: 1.5, ease: "power3.inOut" },
+            0
+          );
+
+          if (shadow) {
+            tlEnter.to(shadow, { opacity: 1, duration: 0.35 }, 0.25);
+            tlEnter.to(shadow, { opacity: 0, duration: 0.3 }, 0.6);
+          }
+        }
+
+        // Case Hero Title character reveal
+        if (caseHeroTitleRef.current) {
+          const chars = caseHeroTitleRef.current.querySelectorAll(".case-char");
+          if (chars.length > 0) {
+            tlEnter.fromTo(
+              chars,
+              { xPercent: -150, opacity: 0 },
+              { xPercent: 0, opacity: 1, duration: 0.65, stagger: 0.025, ease: "power2.out" },
+              0.65
+            );
+          }
+        }
+
+        // Vertical tags slide in from below
+        if (caseTagsRef.current) {
+          tlEnter.from(
+            caseTagsRef.current.children,
+            { yPercent: 110, duration: 0.75, ease: "power3.out" },
+            0.85
+          );
+        }
+
+        // Scrapbook items drop in
+        if (caseScrapbookRef.current) {
+          const items = caseScrapbookRef.current.querySelectorAll(`.${styles.scrapbookItemDraggable}`);
+          if (items.length > 0) {
+            tlEnter.from(
+              items,
+              { y: "50vh", opacity: 0, duration: 0.5, ease: "power3.out", stagger: 0.05 },
+              1.0
+            );
+          }
+        }
+      }, 50);
     });
+  };
 
-    // Fade breadcrumb and title
-    if (breadcrumbRef.current) {
-      tl.to(
-        breadcrumbRef.current,
-        { opacity: 0, y: -10, duration: 0.2, ease: "power2.out" },
-        0
-      );
-    }
-    if (titleRef.current) {
-      tl.to(
-        titleRef.current,
-        { opacity: 0, y: -10, duration: 0.2, ease: "power2.out" },
-        0.05
-      );
-    }
+  // Close Folder: Reverses back to accordion stack (Rct + zct)
+  const handleCloseToStack = () => {
+    soundFx.playFolderFlap();
 
-    // ── Stage 2: Direct 3D Folder Transition ──
-    let initialY = 0;
-    let rowHeight = 40; // Height of the stack tab header
-    if (targetRow && readerRef.current) {
-      const targetRect = targetRow.getBoundingClientRect();
-      const readerRect = readerRef.current.getBoundingClientRect();
-      
-      const targetCenterY = targetRect.top + rowHeight / 2;
-      const finalCenterY = readerRect.top + 580 / 2;
-      
-      initialY = targetCenterY - finalCenterY;
-    }
-
-    // Query ReaderView components directly inside the readerLayer
-    const spread = readerRef.current?.querySelector(`.${styles.spreadContainer}`);
-    const leftPage = readerRef.current?.querySelector(`.${styles.leftPage}`);
-    const rightPage = readerRef.current?.querySelector(`.${styles.rightPage}`);
-    const receipt = readerRef.current?.querySelector(`.${styles.receiptWrapper}`);
-    const tabs = readerRef.current?.querySelector(`.${styles.rightEdgeTabs}`);
-    const coverOverlay = readerRef.current?.querySelector(`.${styles.spreadCoverOverlay}`);
-
-    if (readerRef.current) {
-      tl.set(readerRef.current, { opacity: 1 }, 0.2);
-    }
-
-    if (targetRow) {
-      // Hide stack row exactly when pulling animation starts
-      tl.to(targetRow, { opacity: 0, duration: 0.05 }, 0.2);
-    }
-
-    if (spread) {
-      tl.set(spread, {
-        transformOrigin: "center center",
-        transformPerspective: 1200,
-        rotateX: -20,
-        rotateY: 10,
-        rotateZ: 0,
-        x: 0,
-        y: initialY,
-        scaleX: 0.48,
-        scaleY: 400 / 580,
-        opacity: 1,
-        backgroundColor: "rgba(34, 85, 204, 0)",
-      }, 0.2);
-    }
-
-    if (coverOverlay) {
-      tl.set(coverOverlay, { opacity: 1 }, 0.2);
-    }
-
-    if (leftPage) {
-      tl.set(leftPage, {
-        rotateY: 105, // Fully folded inward (backface hidden)
-        opacity: 0,   // Hide initially to let red cover show
-      }, 0.2);
-    }
-
-    if (rightPage) {
-      tl.set(rightPage, {
-        rotateY: -105, // Fully folded inward
-        opacity: 0,
-      }, 0.2);
-    }
-
-    if (receipt) {
-      tl.set(receipt, {
-        opacity: 0,
-        y: 80,
-        rotate: 15,
-      }, 0.2);
-    }
-
-    if (tabs) {
-      tl.set(tabs, {
-        opacity: 0,
-        x: -30,
-      }, 0.2);
-    }
-
-    // ── UNIFIED FLUID TRANSITION: Centering & Opening Simultaneously ──
-    const openDuration = 0.95;
-    const openEase = "power3.out";
-
-    if (spread) {
-      tl.to(spread, {
-        x: 0,
-        y: 0,
-        rotateZ: 0,
-        rotateX: 0,
-        rotateY: 0,
-        scaleX: 1,
-        scaleY: 1,
-        backgroundColor: "rgba(34, 85, 204, 1)",
-        duration: openDuration,
-        ease: openEase,
-      }, 0.25);
-    }
-
-    // Fade out cover overlay to reveal the pages
-    if (coverOverlay) {
-      tl.to(coverOverlay, {
-        opacity: 0,
-        duration: openDuration * 0.75,
-        ease: "power2.inOut",
-      }, 0.25);
-    }
-
-    // Swing pages open in 3D
-    if (leftPage) {
-      tl.to(leftPage, {
-        rotateY: 0,
-        opacity: 1,
-        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.2)",
-        duration: openDuration,
-        ease: openEase,
-      }, 0.25);
-    }
-
-    if (rightPage) {
-      tl.to(rightPage, {
-        rotateY: 0,
-        opacity: 1,
-        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.2)",
-        duration: openDuration,
-        ease: openEase,
-      }, 0.25);
-    }
-
-    // Receipt card slides and drops in tactilely
-    if (receipt) {
-      tl.to(receipt, {
-        opacity: 1,
-        y: 0,
-        rotate: -5,
-        duration: 0.65,
-        ease: "power2.out",
-      }, 0.65);
-    }
-
-    // Side tabs slide out from the folder edge
-    if (tabs) {
-      tl.to(tabs, {
-        opacity: 1,
-        x: 0,
-        duration: 0.55,
-        ease: "back.out(1.3)",
-      }, 0.75);
-    }
-
-    // Title scramble + metadata fade in
-    tl.call(
-      () => {
-        scramble("Fragments 15–20", "Fragment 17B");
-      },
-      [],
-      0.3
-    );
-
-    // Show metadata
-    if (metadataRef.current) {
-      tl.fromTo(
-        metadataRef.current,
-        { opacity: 0, y: 10 },
-        { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
-        0.35
-      );
-    }
-
-    // Scramble the title ref back to visible
-    if (titleRef.current) {
-      tl.set(titleRef.current, { opacity: 1, y: 0 }, 0.9);
-    }
-
-    tl.play();
-  }, [phase, scramble]);
-
-  const handleReset = useCallback(() => {
-    // Trigger the closing sound effect immediately upon click
-    playPaperRustle(false);
-
-    if (timelineRef.current) {
-      timelineRef.current.kill();
-    }
-
-    setPhase("collapsing");
-
-    const targetRow = rowRefs.current.get(TARGET_FOLDER_ID);
-    const containerRect = containerRef.current?.getBoundingClientRect();
-    const targetRect = targetRow?.getBoundingClientRect();
-    const containerWidth = containerRect ? containerRect.width : 1150;
-    
-    let initialY = 0;
-    let rowHeight = 40;
-    if (targetRow && readerRef.current) {
-      const targetRect = targetRow.getBoundingClientRect();
-      const readerRect = readerRef.current.getBoundingClientRect();
-      const targetCenterY = targetRect.top + rowHeight / 2;
-      const finalCenterY = readerRect.top + 580 / 2;
-      initialY = targetCenterY - finalCenterY;
-    }
-
-    const tl = gsap.timeline({
+    // 1. Animate cover back to closed (rotateY: 0)
+    const tlClose = gsap.timeline({
+      defaults: { ease: "power3.inOut", duration: 1.2 },
       onComplete: () => {
         setPhase("stack");
-        // Clear props to prevent layout contamination
-        rowRefs.current.forEach((el) => {
-          if (el) gsap.set(el, { clearProps: "all" });
-        });
-        if (breadcrumbRef.current) gsap.set(breadcrumbRef.current, { clearProps: "all" });
-        if (titleRef.current) gsap.set(titleRef.current, { clearProps: "all" });
-        if (metadataRef.current) gsap.set(metadataRef.current, { clearProps: "all" });
-        if (readerRef.current) {
-          gsap.set(readerRef.current, { clearProps: "all", opacity: 0 });
 
-          const spread = readerRef.current.querySelector(`.${styles.spreadContainer}`);
-          const leftPage = readerRef.current.querySelector(`.${styles.leftPage}`);
-          const rightPage = readerRef.current.querySelector(`.${styles.rightPage}`);
-          const receipt = readerRef.current.querySelector(`.${styles.receiptWrapper}`);
-          const tabs = readerRef.current.querySelector(`.${styles.rightEdgeTabs}`);
-          const coverOverlay = readerRef.current.querySelector(`.${styles.spreadCoverOverlay}`);
+        // Scroll back to top
+        window.scrollTo({ top: 0, behavior: "instant" });
 
-          if (spread) gsap.set(spread, { clearProps: "all" });
-          if (leftPage) gsap.set(leftPage, { clearProps: "all" });
-          if (rightPage) gsap.set(rightPage, { clearProps: "all" });
-          if (receipt) gsap.set(receipt, { clearProps: "all" });
-          if (tabs) gsap.set(tabs, { clearProps: "all" });
-          if (coverOverlay) gsap.set(coverOverlay, { clearProps: "all" });
-        }
+        // Sibling folders slide back up
+        setTimeout(() => {
+          const allGroups = Array.from(groupRefs.current.entries());
+          const siblings = allGroups
+            .filter(([id]) => id !== activeGroupIndex)
+            .map(([, el]) => el)
+            .filter(Boolean);
+
+          const tlRestore = gsap.timeline({
+            defaults: { duration: 0.9, ease: "power4.out" },
+          });
+
+          tlRestore.fromTo(
+            siblings,
+            { yPercent: 120 },
+            { yPercent: 0, duration: 0.9, stagger: 0.1, clearProps: "yPercent" },
+            0
+          );
+
+          if (heroTitleRef.current) {
+            tlRestore.fromTo(
+              heroTitleRef.current,
+              { y: "2rem", opacity: 0 },
+              { y: 0, opacity: 1, duration: 0.8 },
+              0.2
+            );
+          }
+          if (heroDescRef.current) {
+            tlRestore.fromTo(
+              heroDescRef.current,
+              { y: "2rem", opacity: 0 },
+              { y: 0, opacity: 1, duration: 0.65 },
+              0.4
+            );
+          }
+        }, 50);
       },
     });
-    timelineRef.current = tl;
 
-    const spread = readerRef.current?.querySelector(`.${styles.spreadContainer}`);
-    const leftPage = readerRef.current?.querySelector(`.${styles.leftPage}`);
-    const rightPage = readerRef.current?.querySelector(`.${styles.rightPage}`);
-    const receipt = readerRef.current?.querySelector(`.${styles.receiptWrapper}`);
-    const tabs = readerRef.current?.querySelector(`.${styles.rightEdgeTabs}`);
-    const coverOverlay = readerRef.current?.querySelector(`.${styles.spreadCoverOverlay}`);
-
-    // Step 1: Fold spread and pages closed in the center, while bringing coverOverlay back to full opacity
-    const closeDuration = 0.85;
-    const closeEase = "power3.inOut";
-
-    if (spread) {
-      tl.to(spread, {
-        scaleX: 0.48,
-        scaleY: 400 / 580,
-        x: 0,
-        y: initialY,
-        rotateZ: 0,
-        rotateX: -20,
-        rotateY: 10,
-        backgroundColor: "rgba(34, 85, 204, 0)",
-        duration: closeDuration,
-        ease: closeEase,
-      }, 0);
+    if (caseCoverRef.current) {
+      tlClose.to(caseCoverRef.current, { rotateY: 0, duration: 1.2, ease: "power3.inOut" }, 0);
     }
-
-    if (coverOverlay) {
-      tl.to(coverOverlay, {
-        opacity: 1,
-        duration: closeDuration * 0.75,
-        ease: closeEase,
-      }, 0);
+    if (caseScrapbookRef.current) {
+      tlClose.to(caseScrapbookRef.current, { opacity: 0, duration: 0.35 }, 0);
     }
+  };
 
-    if (leftPage) {
-      tl.to(leftPage, {
-        rotateY: 105,
+  // Switch between sibling cases inside open dossier (e.g. Mary Colter <-> Louis Sullivan)
+  const handleSelectCase = (caseIndex: number) => {
+    soundFx.playPaperRustle();
+
+    const items = document.querySelectorAll(`.${styles.scrapbookItemDraggable}`);
+    const sheet = document.querySelector(`.${styles.caseFolderSheet}`);
+
+    if (items.length > 0) {
+      gsap.to(items, {
+        y: "+=120",
         opacity: 0,
-        duration: closeDuration,
-        ease: closeEase,
-      }, 0);
-    }
+        duration: 0.22,
+        stagger: 0.015,
+        ease: "power2.in",
+        onComplete: () => {
+          setActiveCaseIndex(caseIndex);
+          if (typeof window !== "undefined" && window.__lenis) {
+            window.__lenis.scrollTo(0, { immediate: true });
+          } else {
+            window.scrollTo({ top: 0, behavior: "instant" });
+          }
 
-    if (rightPage) {
-      tl.to(rightPage, {
-        rotateY: -105,
-        opacity: 0,
-        duration: closeDuration,
-        ease: closeEase,
-      }, 0);
-    }
-
-    if (receipt) {
-      tl.to(receipt, {
-        opacity: 0,
-        y: 80,
-        rotate: 15,
-        duration: 0.4,
-      }, 0);
-    }
-
-    if (tabs) {
-      tl.to(tabs, {
-        opacity: 0,
-        x: -30,
-        duration: 0.4,
-      }, 0);
-    }
-
-    // Fade/scale out reader layer completely at the end
-    if (readerRef.current) {
-      tl.to(readerRef.current, {
-        opacity: 0,
-        duration: closeDuration,
-        ease: closeEase,
-      }, 0);
-    }
-
-    // Fade and bring back non-target rows and title info
-    const nonTargetRows: HTMLDivElement[] = [];
-    rowRefs.current.forEach((el, id) => {
-      if (id !== TARGET_FOLDER_ID && el) {
-        nonTargetRows.push(el);
-      }
-    });
-
-    nonTargetRows.forEach((row) => {
-      tl.to(
-        row,
-        {
-          opacity: 1,
-          y: 0,
-          duration: closeDuration,
-          ease: closeEase,
+          setTimeout(() => {
+            if (sheet) {
+              gsap.fromTo(
+                sheet,
+                { y: 50, opacity: 0.7 },
+                { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }
+              );
+            }
+            const newItems = document.querySelectorAll(`.${styles.scrapbookItemDraggable}`);
+            if (newItems.length > 0) {
+              gsap.fromTo(
+                newItems,
+                { y: 70, opacity: 0 },
+                { y: 0, opacity: 1, duration: 0.55, stagger: 0.03, ease: "power3.out" }
+              );
+            }
+          }, 50);
         },
-        0
-      );
-    });
-
-    // Bring back target row at the end of the animation
-    if (targetRow) {
-      tl.to(targetRow, { opacity: 1, duration: 0.05 }, closeDuration);
-    }
-
-    if (breadcrumbRef.current) {
-      tl.to(
-        breadcrumbRef.current,
-        { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
-        0.55
-      );
-    }
-
-    if (titleRef.current) {
-      tl.call(
-        () => {
-          scramble("Fragment 17B", "Fragments 15–20");
-        },
-        [],
-        0.55
-      );
-      tl.to(
-        titleRef.current,
-        { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
-        0.55
-      );
-    }
-
-    if (metadataRef.current) {
-      tl.to(
-        metadataRef.current,
-        { opacity: 0, y: 10, duration: 0.3, ease: "power2.in" },
-        0
-      );
-    }
-
-    tl.play();
-  }, [scramble]);
-  const handleTabClick = useCallback(
-    (folderId: number, tabLabel: string) => {
-      if (folderId === TARGET_FOLDER_ID) {
-        handlePeripheralEntryClick();
+      });
+    } else {
+      setActiveCaseIndex(caseIndex);
+      if (typeof window !== "undefined" && window.__lenis) {
+        window.__lenis.scrollTo(0, { immediate: true });
       } else {
-        setActiveFolderId(folderId);
+        window.scrollTo({ top: 0, behavior: "instant" });
       }
-    },
-    [handlePeripheralEntryClick]
-  );
+    }
+  };
 
   return (
-    <div className={styles.animationContainer} ref={containerRef}>
-
-
-      {/* ── Stack layer ── */}
-      <div
-        className={styles.stackLayer}
-        ref={stackRef}
-        style={{
-          pointerEvents: phase === "stack" ? "auto" : "none",
-          display: phase === "reader" ? "none" : "block",
-          width: "100%",
-          position: phase === "collapsing" ? "relative" : "static",
-          zIndex: phase === "collapsing" ? 2 : "auto",
-        }}
-      >
-        {FOLDERS.map((folder, index) => {
-          const headerBgColor =
-            index === 0 ? "transparent" : FOLDERS[index - 1].primaryColor;
-          const isLast = index === FOLDERS.length - 1;
-
-          return (
-            <StackRow
-              key={folder.id}
-              folder={folder}
-              isExpanded={activeFolderId === folder.id}
-              headerBgColor={headerBgColor}
-              isLast={isLast}
-              rowRef={createRowRef(folder.id)}
-              onTabClick={(tabLabel) => handleTabClick(folder.id, tabLabel)}
-            />
-          );
-        })}
-      </div>
-
-      {/* ── Reader layer ── */}
-      <div
-        ref={readerRef}
-        className={styles.readerLayer}
-        style={{
-          display: phase === "reader" || phase === "folder3d" || phase === "collapsing" ? "block" : "none",
-          position: phase === "collapsing" ? "absolute" : "relative",
-          top: phase === "collapsing" ? "24px" : "auto",
-          left: phase === "collapsing" ? "16px" : "auto",
-          width: phase === "collapsing" ? "calc(100% - 32px)" : "100%",
-          zIndex: phase === "collapsing" ? 1 : "auto",
-        }}
-      >
-        {/* Reader content */}
-        <ReaderView />
-      </div>
-
-      {/* ── Floating Back Button ── */}
-      {phase !== "stack" && (
-        <button
-          onClick={handleReset}
-          style={{
-            position: "fixed",
-            top: "24px",
-            left: "24px",
-            background: "rgba(255, 255, 255, 0.08)",
-            backdropFilter: "blur(12px)",
-            border: "1px solid rgba(255, 255, 255, 0.15)",
-            color: "#F0ECE4",
-            width: "42px",
-            height: "42px",
-            borderRadius: "50%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            zIndex: 100,
-            transition: "all 200ms cubic-bezier(0.16, 1, 0.3, 1)",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.background = "rgba(255, 255, 255, 0.18)";
-            (e.currentTarget as HTMLElement).style.transform = "scale(1.05)";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.background = "rgba(255, 255, 255, 0.08)";
-            (e.currentTarget as HTMLElement).style.transform = "scale(1)";
-          }}
-          title="Go Back"
+    <div className={`${styles.pageHome} ${phase === "case-view" ? styles.pageCaseActive : ""}`}>
+      {/* Top Header */}
+      <header className={styles.theHeader}>
+        <div
+          className={styles.theLogo}
+          onClick={phase === "case-view" ? handleCloseToStack : undefined}
+          style={{ cursor: phase === "case-view" ? "pointer" : "default" }}
         >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+          MOSBY’S FILES
+        </div>
+        <nav className={styles.theNav}>
+          <a
+            href="https://www.mosbyfiles.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.theNavItem}
           >
-            <line x1="19" y1="12" x2="5" y2="12"></line>
-            <polyline points="12 19 5 12 12 5"></polyline>
-          </svg>
-        </button>
+            About
+          </a>
+        </nav>
+      </header>
+
+      {/* Hero Section */}
+      {phase !== "case-view" && (
+        <section className={styles.sectionHero}>
+          <div className={styles.sectionHeroInner}>
+            <h1 ref={heroTitleRef} className={styles.sectionHeroTitle}>
+              AMERICAN MODERNISM
+            </h1>
+            <p ref={heroDescRef} className={styles.sectionHeroDesc}>
+              A project exploring early 20th-century American architects, contrasting them
+              with European Modernism and revealing a distinct American path of functionalism
+              that shaped contemporary architecture
+            </p>
+          </div>
+        </section>
+      )}
+
+      {/* Main Interactive Scene */}
+      {phase !== "case-view" ? (
+        <div className={styles.pageHomeStack}>
+          <div ref={stackRef} className={styles.stack}>
+            {FOLDER_GROUPS.map((group, gIdx) => {
+              const isLast = gIdx === FOLDER_GROUPS.length - 1;
+              const isHovered = hoveredGroupId === group.groupId;
+              const isRotated = isHovered || (hoveredGroupId === -1 && isLast);
+              const zIndex = group.groupId + 1;
+              const reverseIdx = FOLDER_GROUPS.length - group.groupId - 1;
+
+              return (
+                <div
+                  key={group.groupId}
+                  ref={setGroupRef(group.groupId)}
+                  className={`${styles.stackGroup} ${isRotated ? styles.isRotated : ""}`}
+                  style={
+                    {
+                      "--cover-bg-color": group.primaryColor,
+                      "--cover-color": "#FFFFFF",
+                      "--group-id": group.groupId + 1,
+                      "--reverse-idx": reverseIdx,
+                      zIndex: zIndex,
+                    } as React.CSSProperties
+                  }
+                  onMouseEnter={() => setHoveredGroupId(group.groupId)}
+                  onMouseLeave={() => setHoveredGroupId(-1)}
+                >
+                  <div className={styles.stackGroupInner}>
+                    {/* Folder Cover */}
+                    <div
+                      className={`${styles.stackCover} ${isHovered ? styles.isHovered : ""} ${
+                        isRotated ? styles.isRotated : ""
+                      }`}
+                    >
+                      {/* Category Label and Arrow on top-right */}
+                      <div className={styles.stackCoverCategory}>
+                        <span>{group.category}</span>
+                        <svg
+                          className={styles.arrowIcon}
+                          width="12"
+                          height="12"
+                          viewBox="0 0 12 12"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M6 9.5L1.5 5L2.55 3.95L6 7.4L9.45 3.95L10.5 5L6 9.5Z"
+                            fill="currentColor"
+                          />
+                        </svg>
+                      </div>
+
+                      {/* Description on active folder */}
+                      {(isHovered || (hoveredGroupId === -1 && isLast)) && (
+                        <div className={styles.stackCoverDesc}>
+                          {group.description}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Stack Pages & Top Tabs */}
+                    <div className={styles.stackPage}>
+                      <div className={styles.stackPageHeader}>
+                        {group.cases.map((c, cIdx) => (
+                          <FolderTab
+                            key={c.slug}
+                            label={c.name}
+                            color={c.color}
+                            textColor={c.textColor}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenFolder(gIdx, cIdx);
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        /* Full Scrollable Case Dossier View */
+        <ReaderView
+          key={activeCase.slug}
+          group={activeGroup}
+          currentCase={activeCase}
+          activeCaseIndex={activeCaseIndex}
+          onSelectCase={handleSelectCase}
+          onClose={handleCloseToStack}
+          coverRef={caseCoverRef}
+          tagsRef={caseTagsRef}
+          scrapbookRef={caseScrapbookRef}
+          heroTitleRef={caseHeroTitleRef}
+        />
       )}
     </div>
   );
 };
+

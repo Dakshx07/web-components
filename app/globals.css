@@ -1,9 +1,28 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Signifier";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/signifier-light.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Founders Grotesk";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/founders-grotesk-x-condensed-bold.woff2") format("woff2");
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --font-serif-signifier: "Signifier", Georgia, serif;
+  --font-display-condensed: "Founders Grotesk", Impact, sans-serif;
 }
+
 
 @theme inline {
   --color-background: var(--background);

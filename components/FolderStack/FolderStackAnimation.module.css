@@ -4,18 +4,24 @@
    ════════════════════════════════════════════════════════════════ */
 
 :root {
-  --stack-border-radius: 4px;
-  --stack-group-height-sm: 20vw;
-  --stack-group-height-lg: clamp(320px, 46vh, 480px);
-  --stack-group-offset: 3.75rem;
-  --stack-perspective: 3000px;
-  --stack-rotation-angle: -3deg;
-  --stack-rotation-offset: 1rem;
-  --stack-shadow: 0 -1px 8px rgba(0, 0, 0, 0.15);
-  --folder-shadow: 1px 0 8px rgba(0, 0, 0, 0.15);
+  --color-gray: #787a7f;
+  --stack-group-height-sm: 15vw;
   --folder-offset: 65vh;
+  --stack-group-height-lg: 80vh;
+  --color-contrast: #fdfaf7;
+  --color-dark: #191919;
+  --stack-rotation-angle: -3deg;
+  --container-offset: 34px;
+  --stack-group-offset: 3.75rem;
   --tag-height: 2.75rem;
   --tag-aspect-ratio: 1.409;
+  --stack-shadow: 0 -1px 8px rgba(0, 0, 0, 0.15);
+  --stack-perspective: 3000px;
+  --color-primary: #191919;
+  --case-content-width: calc((calc(100vw - 34px * 2) - 19 * 1rem) * 16 / 20 + 15rem);
+  --container-size: calc(100vw - 34px * 2);
+  --stack-border-radius: 4px;
+  --folder-shadow: 1px 0 8px rgba(0, 0, 0, 0.15);
 }
 
 /* ── Page Container ── */
@@ -42,11 +48,12 @@
 
 /* ── Top Header ── */
 .theHeader {
-  width: 100%;
+  width: var(--container-size);
+  margin-inline: var(--container-offset);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px 36px;
+  padding: 24px 0;
   position: absolute;
   top: 0;
   left: 0;
@@ -55,18 +62,21 @@
 }
 
 .theLogo {
-  font-family: var(--font-display-condensed), "Founders Grotesk", Impact, sans-serif;
-  font-size: 1.625rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: #ffffff;
-  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  color: var(--color-contrast, #ffffff);
+}
+
+.theLogo:hover {
+  opacity: 0.8;
 }
 
 .theNav {
   position: absolute;
-  right: 36px;
+  right: 0;
   display: flex;
   align-items: center;
 }
@@ -270,10 +280,6 @@
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.tag:hover {
-  transform: translateY(-2px);
-}
-
 .tagVisible {
   opacity: 1;
 }
@@ -332,15 +338,14 @@
 /* ── Case Hero Title ── */
 .caseHero {
   position: relative;
-  width: 100%;
-  padding-inline: 4vw;
-  margin-top: 3.75rem;
-  padding-top: 2rem;
-  padding-bottom: 2rem;
+  width: var(--container-size);
+  margin: 60px var(--container-offset) 0px;
+  padding: 60px 0px;
   z-index: 50;
   display: flex;
   justify-content: flex-start;
   align-items: flex-end;
+  box-sizing: border-box;
 }
 
 /* ── Pinned Sub-Header when Scrolled ── */
@@ -350,7 +355,7 @@
   left: 0;
   width: 100%;
   height: 3.75rem;
-  padding: 0 4vw;
+  padding: 0 var(--container-offset);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -389,13 +394,15 @@
 
 .caseHeroTitle {
   font-family: var(--font-display-condensed), "Founders Grotesk", Impact, sans-serif;
-  font-size: clamp(3.5rem, 8.5vw, 7.5rem);
+  font-size: 120px;
+  line-height: 96px;
   font-weight: 700;
   text-transform: uppercase;
-  color: #ffffff;
+  color: var(--color-contrast, #fdfaf7);
   margin: 0;
-  line-height: 0.85;
-  letter-spacing: -0.01em;
+  padding: 0;
+  letter-spacing: normal;
+  transform-origin: left top;
 }
 
 .caseHeroActions {
@@ -427,22 +434,23 @@
 
 /* ── Case Content Wrapper ── */
 .caseContent {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-bottom: 120px;
-}
-
-.caseContentInner {
-  width: 100%;
-  max-width: 1280px;
-  margin-inline: auto;
-  padding-inline: 4vw;
+  width: var(--container-size);
+  margin: 0 var(--container-offset);
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 80px;
+  padding: 0;
+  padding-bottom: 120px;
+  box-sizing: border-box;
+}
+
+.caseContentInner {
+  width: var(--case-content-width);
+  margin: 0;
+  padding: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ── 3D Case Folder ── */
@@ -451,7 +459,9 @@
   position: relative;
   perspective: var(--stack-perspective);
   transform-style: preserve-3d;
+  transform-origin: right top;
   border-radius: 0 var(--stack-border-radius) var(--stack-border-radius) 0;
+  will-change: transform, width, height;
 }
 
 /* 3D Flap Cover */
@@ -502,11 +512,12 @@
   display: flex;
   position: absolute;
   right: 0;
-  top: var(--stack-border-radius);
+  top: var(--stack-border-radius, 4px);
   transform: translate(100%, -100%) rotate(90deg);
   transform-origin: left bottom;
   width: 100%;
-  z-index: 15;
+  height: 43px;
+  z-index: -1;
 }
 
 .caseFolderTagsPage {
@@ -518,19 +529,20 @@
   cursor: pointer;
 }
 
-.caseFolderTagsPage:not(:first-child) {
-  bottom: 0;
-  left: 0;
+.caseFolderTagsPage::before {
+  background: var(--bg-color, var(--case-color));
+  border-radius: var(--stack-border-radius, 4px) var(--stack-border-radius, 4px) 0 0;
+  bottom: 0px;
+  content: "";
+  height: 20px;
+  left: 0px;
   position: absolute;
-}
-
-.caseFolderTagsPage:hover {
-  transform: translateY(-8px);
+  width: 100%;
 }
 
 .caseFolderTagsPageActive {
+  cursor: default;
   pointer-events: none;
-  transform: translateY(-8px);
 }
 
 /* ── Folder Inner Background ── */
@@ -538,9 +550,9 @@
   background-color: var(--case-color, #d6231b);
   border-radius: 0 var(--stack-border-radius) var(--stack-border-radius) 0;
   box-sizing: border-box;
-  padding: 40px 48px;
+  padding: var(--container-offset) var(--container-offset) var(--container-offset) 0px;
   position: relative;
-  min-height: 3100px;
+  min-height: 3000px;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -550,10 +562,8 @@
 
 /* ── Archival Cream Paper Sheet ── */
 .caseFolderSheetWrapper {
+  --clip-size: 5rem;
   width: 100%;
-  max-width: 1060px;
-  aspect-ratio: 210/297;
-  min-height: 850px;
   display: flex;
   justify-content: flex-end;
   position: relative;
@@ -563,9 +573,13 @@
   background-color: #fffcf9;
   border-radius: 4px;
   box-sizing: border-box;
-  color: #100f0a;
-  flex-grow: 1;
-  padding: 3.5rem 3.5rem 3.5rem 5.5rem;
+  color: var(--color-dark, #191919);
+  flex-grow: 0;
+  flex-shrink: 0;
+  width: calc(100% - var(--container-offset));
+  aspect-ratio: 210 / 297;
+  padding: 5.625rem 5.625rem 5.625rem calc(5rem + 1rem);
+  /* 90px 90px 90px 96px */
   position: relative;
   z-index: 0;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.25);
@@ -655,33 +669,38 @@
 
 .sheetPhoto {
   align-items: center;
-  aspect-ratio: 0.875;
+  aspect-ratio: 0.875 / 1;
   display: flex;
   justify-content: center;
+  margin-top: calc(5.625rem * -1 + 1rem);
+  margin-bottom: calc(5.625rem * 0.66);
   min-width: 140px;
   position: relative;
   transform: rotate(-1.5deg);
   transform-origin: left bottom;
   width: 100%;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-  border: 4px solid #ffffff;
-  background-color: #ffffff;
 }
 
 .sheetPhoto img {
-  width: 100%;
-  height: 100%;
+  aspect-ratio: inherit;
   object-fit: cover;
+  width: 100%;
   display: block;
 }
 
 .contentPaperclip {
   position: absolute;
-  right: 2rem;
+  left: 20%;
   top: 0;
-  transform: translateY(-1.25rem) !important;
+  transform: translateY(-16px) !important;
   z-index: 10;
   pointer-events: none;
+}
+
+.contentPaperclip svg {
+  width: 20px;
+  height: 89px;
+  display: block;
 }
 
 .sheetInfoWrapper {
@@ -875,13 +894,22 @@
 .caseNextWidget {
   position: fixed;
   bottom: 34px;
-  right: 34px;
+  right: -240px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 8px;
   z-index: 100;
   text-decoration: none;
+  opacity: 0;
+  pointer-events: none;
+  transition: right 0.4s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.4s ease;
+}
+
+.caseNextWidgetVisible {
+  right: 34px;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .caseNextCard {

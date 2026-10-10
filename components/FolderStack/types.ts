@@ -43,4 +43,10 @@ export interface FolderGroupConfig {
   cases: ArchitectCase[];
 }
 
-export type AnimationPhase = "stack" | "collapsing" | "unfolding" | "case-view";
+export type AnimationPhase =
+  | "stack"
+  | "collapsing"
+  | "unfolding"
+  | "case-view"
+  | "closing-to-stack";
+

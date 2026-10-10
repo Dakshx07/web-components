@@ -239,6 +239,7 @@ export const FolderStackAnimation: React.FC = () => {
   const [hoveredGroupId, setHoveredGroupId] = useState<number>(-1);
   const [activeGroupIndex, setActiveGroupIndex] = useState<number>(3); // Default to Group 4 (Contextual: Mary Colter & Louis Sullivan)
   const [activeCaseIndex, setActiveCaseIndex] = useState<number>(0); // Default to Mary Colter
+  const [folderStartDelta, setFolderStartDelta] = useState<number>(420);
 
   // Refs for GSAP choreography
   const stackRef = useRef<HTMLDivElement>(null);
@@ -247,6 +248,7 @@ export const FolderStackAnimation: React.FC = () => {
   const heroDescRef = useRef<HTMLParagraphElement>(null);
 
   // Case view refs for enter animation
+  const caseFolderRef = useRef<HTMLDivElement | null>(null);
   const caseCoverRef = useRef<HTMLDivElement | null>(null);
   const caseTagsRef = useRef<HTMLDivElement | null>(null);
   const caseScrapbookRef = useRef<HTMLDivElement | null>(null);
@@ -302,202 +304,280 @@ export const FolderStackAnimation: React.FC = () => {
     return () => clearTimeout(timer);
   }, [phase, activeCaseIndex]);
 
-  // Open Folder animation: matches exact Mosby DwAQhwlc.js (Dct + kct)
+  // Open Folder handler: synchronously measures delta and triggers unfolding phase
   const handleOpenFolder = (groupIndex: number, caseIndex: number) => {
-    if (phase === "unfolding") return;
+    if (phase === "unfolding" || phase === "case-view" || phase === "closing-to-stack") return;
 
     soundFx.playFolderFlap();
 
+    // Measure deltaY from clicked folder in stack to reader dock top (216px)
+    const clickedEl = groupRefs.current.get(groupIndex);
+    let deltaY = 420;
+    if (clickedEl) {
+      const rect = clickedEl.getBoundingClientRect();
+      deltaY = Math.max(80, Math.round(rect.top - 216));
+    }
+
+    setFolderStartDelta(deltaY);
     setActiveGroupIndex(groupIndex);
     setActiveCaseIndex(caseIndex);
+    setPhase("unfolding");
+  };
 
-    // 1. Leave Timeline: Drop sibling folders and hero text
-    const tlLeave = gsap.timeline({
-      defaults: { ease: "power2.out", duration: 0.75 },
+  // GSAP Unified Opening Timeline (DwAQhwlc.js: Dct + kct)
+  useEffect(() => {
+    if (phase !== "unfolding") return;
+
+    window.scrollTo({ top: 0, behavior: "instant" });
+
+    const tlEnter = gsap.timeline({
+      defaults: { ease: "power3.inOut", duration: 1.5 },
+      onComplete: () => {
+        setPhase("case-view");
+      },
     });
 
-    if (heroDescRef.current) {
-      tlLeave.to(heroDescRef.current, { y: "2rem", opacity: 0, duration: 0.45 }, 0.05);
-    }
-    if (heroTitleRef.current) {
-      tlLeave.to(heroTitleRef.current, { y: "2rem", opacity: 0, duration: 0.45, stagger: -0.05 }, 0.15);
-    }
-
+    // 1. Stack: Sibling groups drop down
     const allGroups = Array.from(groupRefs.current.entries());
     const siblings = allGroups
-      .filter(([id]) => id !== groupIndex)
+      .filter(([id]) => id !== activeGroupIndex)
       .map(([, el]) => el)
       .filter(Boolean);
 
-    tlLeave.to(siblings, { yPercent: 120, stagger: 0.1, duration: 0.75 }, 0);
+    tlEnter.to(
+      siblings,
+      { yPercent: 120, stagger: 0.08, duration: 0.65, ease: "power2.inOut" },
+      0
+    );
 
-    // Transition into case view after sibling drop
-    tlLeave.call(() => {
-      setPhase("case-view");
+    // 2. Stack: Hero texts slide down and fade out
+    if (heroDescRef.current) {
+      tlEnter.to(heroDescRef.current, { y: "2rem", opacity: 0, duration: 0.45 }, 0.05);
+    }
+    if (heroTitleRef.current) {
+      tlEnter.to(heroTitleRef.current, { y: "2rem", opacity: 0, duration: 0.45, stagger: -0.05 }, 0.15);
+    }
 
-      // Scroll smoothly to top
-      window.scrollTo({ top: 0, behavior: "instant" });
+    // 3. Reader: Folder container glides from slot deltaY up to 0, tilting mid-air
+    if (caseFolderRef.current) {
+      tlEnter.fromTo(
+        caseFolderRef.current,
+        { y: folderStartDelta, x: -20, transformOrigin: "right bottom" },
+        { y: 0, x: 0, duration: 1.5, ease: "power3.inOut" },
+        0
+      );
 
-      // Run FolderOpenEnter timeline (kct) once mounted
-      setTimeout(() => {
-        const tlEnter = gsap.timeline({
-          defaults: { ease: "power3.inOut", duration: 1.5 },
-        });
+      // Authentic physical tilt arc (~32deg peak at 0.65s, levelling back to 0deg flat)
+      tlEnter.fromTo(
+        caseFolderRef.current,
+        { rotate: 0 },
+        { rotate: 32, duration: 0.65, ease: "power2.out" },
+        0
+      );
+      tlEnter.to(
+        caseFolderRef.current,
+        { rotate: 0, duration: 0.85, ease: "power3.inOut", clearProps: "transformOrigin" },
+        0.65
+      );
+    }
 
-        // 3D Flap Cover rotation around left spine: 0 to -180deg
-        if (caseCoverRef.current) {
-          const shadow = caseCoverRef.current.querySelector(`.${styles.caseFolderCoverShadow}`);
+    // 4. Reader: 3D Flap Cover unrolls around left spine (0 to -180deg)
+    if (caseCoverRef.current) {
+      const shadow = caseCoverRef.current.querySelector(`.${styles.caseFolderCoverShadow}`);
 
-          tlEnter.fromTo(
-            caseCoverRef.current,
-            { rotateY: 0 },
-            { rotateY: -180, duration: 1.5, ease: "power3.inOut" },
-            0
-          );
+      tlEnter.fromTo(
+        caseCoverRef.current,
+        { rotateY: 0, transformOrigin: "left center" },
+        { rotateY: -180, duration: 1.5, ease: "power3.inOut" },
+        0
+      );
 
-          if (shadow) {
-            tlEnter.to(shadow, { opacity: 1, duration: 0.35 }, 0.25);
-            tlEnter.to(shadow, { opacity: 0, duration: 0.3 }, 0.6);
-          }
-        }
+      if (shadow) {
+        tlEnter.to(shadow, { opacity: 1, duration: 0.35 }, 0.25);
+        tlEnter.to(shadow, { opacity: 0, duration: 0.3 }, 0.6);
+      }
+    }
 
-        // Case Hero Title character reveal
-        if (caseHeroTitleRef.current) {
-          const chars = caseHeroTitleRef.current.querySelectorAll(".case-char");
-          if (chars.length > 0) {
-            tlEnter.fromTo(
-              chars,
-              { xPercent: -150, opacity: 0 },
-              { xPercent: 0, opacity: 1, duration: 0.65, stagger: 0.025, ease: "power2.out" },
-              0.65
-            );
-          }
-        }
+    // 5. Reader: Case Hero Title character reveal
+    if (caseHeroTitleRef.current) {
+      const chars = caseHeroTitleRef.current.querySelectorAll(".case-char");
+      if (chars.length > 0) {
+        tlEnter.fromTo(
+          chars,
+          { xPercent: -150, opacity: 0 },
+          {
+            xPercent: 0,
+            opacity: 1,
+            duration: 0.65,
+            stagger: 0.025,
+            ease: "power2.out",
+            clearProps: "transform,opacity",
+          },
+          0.65
+        );
+      }
+    }
 
-        // Vertical tags slide in from below for sibling tabs (matching Mosby kct with clearProps: "y")
-        if (caseTagsRef.current) {
-          const siblingTags = caseTagsRef.current.querySelectorAll(
-            `.${styles.caseFolderTagsPage}:not(.${styles.caseFolderTagsPageActive})`
-          );
-          if (siblingTags.length > 0) {
-            tlEnter.from(
-              siblingTags,
-              { yPercent: 110, duration: 0.75, ease: "power3.out", clearProps: "y" },
-              0.85
-            );
-          }
-        }
+    // 6. Reader: Spine tags slide up from below
+    if (caseTagsRef.current) {
+      const siblingTags = caseTagsRef.current.querySelectorAll(
+        `.${styles.caseFolderTagsPage}:not(.${styles.caseFolderTagsPageActive})`
+      );
+      if (siblingTags.length > 0) {
+        tlEnter.fromTo(
+          siblingTags,
+          { yPercent: 110 },
+          { yPercent: 0, duration: 0.75, ease: "power3.out", clearProps: "y" },
+          0.85
+        );
+      }
+    }
 
-        // Scrapbook items drop in
-        if (caseScrapbookRef.current) {
-          const items = caseScrapbookRef.current.querySelectorAll(`.${styles.scrapbookItemDraggable}`);
-          if (items.length > 0) {
-            tlEnter.from(
-              items,
-              { y: "50vh", opacity: 0, duration: 0.5, ease: "power3.out", stagger: 0.05, clearProps: "y" },
-              1.0
-            );
-          }
-        }
-      }, 50);
-    });
-  };
+    // 7. Reader: Scrapbook items drop in
+    if (caseScrapbookRef.current) {
+      tlEnter.to(caseScrapbookRef.current, { opacity: 1, duration: 0.3 }, 0.95);
+      const items = caseScrapbookRef.current.querySelectorAll(`.${styles.scrapbookItemDraggable}`);
+      if (items.length > 0) {
+        tlEnter.fromTo(
+          items,
+          { y: "50vh", opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.5, ease: "power3.out", stagger: 0.05, clearProps: "y" },
+          1.0
+        );
+      }
+    }
 
-  // Close Folder: Reverses back to accordion stack (Rct + zct)
+    return () => {
+      tlEnter.kill();
+    };
+  }, [phase, folderStartDelta, activeGroupIndex]);
+
+  // Close Folder handler: drops scrapbook items and enters closing-to-stack phase
   const handleCloseToStack = () => {
+    if (phase !== "case-view") return;
     soundFx.playFolderFlap();
 
-    // Stage 1 (Rct): First drop scrapbook items down
-    const items = document.querySelectorAll(`.${styles.scrapbookItemDraggable}`);
-    const chars = caseHeroTitleRef.current ? caseHeroTitleRef.current.querySelectorAll(".case-char") : [];
-    const shadow = caseCoverRef.current ? caseCoverRef.current.querySelector(`.${styles.caseFolderCoverShadow}`) : null;
+    if (typeof window !== "undefined" && window.__lenis) {
+      window.__lenis.scrollTo(0, { duration: 0.4, lock: true });
+    } else {
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
 
-    gsap.to(items, {
-      y: "50vh",
-      duration: 0.2,
-      ease: "power2.in",
+    const items = caseScrapbookRef.current
+      ? caseScrapbookRef.current.querySelectorAll(`.${styles.scrapbookItemDraggable}`)
+      : [];
+
+    if (items.length > 0) {
+      gsap.to(items, {
+        y: "50vh",
+        opacity: 0,
+        duration: 0.2,
+        ease: "power2.in",
+        onComplete: () => {
+          setPhase("closing-to-stack");
+        },
+      });
+    } else {
+      setPhase("closing-to-stack");
+    }
+  };
+
+  // GSAP Symmetrical Reverse Closing Timeline (DwAQhwlc.js: Rct + zct)
+  useEffect(() => {
+    if (phase !== "closing-to-stack") return;
+
+    // 0. Ensure sibling folders and stack hero start dropped below during flight
+    const allGroups = Array.from(groupRefs.current.entries());
+    const siblings = allGroups
+      .filter(([id]) => id !== activeGroupIndex)
+      .map(([, el]) => el)
+      .filter(Boolean);
+
+    gsap.set(siblings, { yPercent: 120 });
+    if (heroTitleRef.current) gsap.set(heroTitleRef.current, { y: "2rem", opacity: 0 });
+    if (heroDescRef.current) gsap.set(heroDescRef.current, { y: "2rem", opacity: 0 });
+
+    const tlClose = gsap.timeline({
+      defaults: { ease: "power3.inOut", duration: 1.5 },
       onComplete: () => {
-        // Reset scroll position to top
-        if (typeof window !== "undefined" && window.__lenis) {
-          window.__lenis.scrollTo(0, { duration: 1.5, lock: true });
-        } else {
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        }
+        setPhase("stack");
+        window.scrollTo({ top: 0, behavior: "instant" });
 
-        // Run reverse 3D folder flap fold and title exit
-        const tlClose = gsap.timeline({
-          defaults: { ease: "power3.inOut", duration: 1.5 },
-          onComplete: () => {
-            setPhase("stack");
-            window.scrollTo({ top: 0, behavior: "instant" });
-
-            // Stage 2 (zct): Restore sibling folders and stack hero
-            setTimeout(() => {
-              const allGroups = Array.from(groupRefs.current.entries());
-              const siblings = allGroups
-                .filter(([id]) => id !== activeGroupIndex)
-                .map(([, el]) => el)
-                .filter(Boolean);
-
-              const tlRestore = gsap.timeline({
-                defaults: { duration: 0.75, ease: "power2.out" },
-              });
-
-              tlRestore.fromTo(
-                siblings,
-                { yPercent: 120 },
-                { yPercent: 0, duration: 0.9, stagger: 0.1, ease: "power4.out", clearProps: "yPercent" },
-                0
-              );
-
-              if (heroTitleRef.current) {
-                tlRestore.fromTo(
-                  heroTitleRef.current,
-                  { y: "2rem", opacity: 0 },
-                  { y: 0, opacity: 1, duration: 0.9, stagger: 0.2, ease: "power4.out" },
-                  0
-                );
-              }
-              if (heroDescRef.current) {
-                tlRestore.fromTo(
-                  heroDescRef.current,
-                  { y: "2rem", opacity: 0 },
-                  { y: 0, opacity: 1, duration: 0.65, ease: "power2.out" },
-                  0.4
-                );
-              }
-            }, 40);
-          },
+        // Restore sibling folders and stack hero
+        const tlRestore = gsap.timeline({
+          defaults: { duration: 0.75, ease: "power2.out" },
         });
 
-        // 3D cover flap rotates back from -180 to 0
-        if (caseCoverRef.current) {
-          tlClose.to(caseCoverRef.current, { rotateY: 0, duration: 1.5, ease: "power3.inOut" }, 0);
-        }
+        tlRestore.fromTo(
+          siblings,
+          { yPercent: 120 },
+          { yPercent: 0, duration: 0.85, stagger: 0.08, ease: "power4.out", clearProps: "yPercent" },
+          0
+        );
 
-        // Case title characters exit to left
-        if (chars.length > 0) {
-          tlClose.to(chars, { xPercent: -150, opacity: 0, duration: 1.15, stagger: 0.035, ease: "power2.inOut" }, 0);
+        if (heroTitleRef.current) {
+          tlRestore.fromTo(
+            heroTitleRef.current,
+            { y: "2rem", opacity: 0 },
+            { y: 0, opacity: 1, duration: 0.85, stagger: 0.2, ease: "power4.out" },
+            0
+          );
         }
-
-        // Flap shadow flash during folding
-        if (shadow) {
-          tlClose.to(shadow, { opacity: 1, duration: 1.0 }, 0);
-          tlClose.to(shadow, { opacity: 0, duration: 0.4 }, 1.0);
-        }
-
-        // Vertical tags slide down
-        if (caseTagsRef.current) {
-          tlClose.to(caseTagsRef.current.children, { yPercent: 110, duration: 0.65, ease: "power3.in" }, 0);
-        }
-
-        // Fade scrapbook container
-        if (caseScrapbookRef.current) {
-          tlClose.to(caseScrapbookRef.current, { opacity: 0, duration: 0.75 }, 0);
+        if (heroDescRef.current) {
+          tlRestore.fromTo(
+            heroDescRef.current,
+            { y: "2rem", opacity: 0 },
+            { y: 0, opacity: 1, duration: 0.65, ease: "power2.out" },
+            0.3
+          );
         }
       },
     });
-  };
+
+    // 1. Title chars exit left
+    if (caseHeroTitleRef.current) {
+      const chars = caseHeroTitleRef.current.querySelectorAll(".case-char");
+      tlClose.to(chars, { xPercent: -150, opacity: 0, duration: 0.8, stagger: 0.02, ease: "power2.in" }, 0);
+    }
+
+    // 2. Spine tags slide down
+    if (caseTagsRef.current) {
+      tlClose.to(caseTagsRef.current.children, { yPercent: 110, duration: 0.65, ease: "power3.in" }, 0);
+    }
+
+    // 3. 3D Flap rotates shut from -180 back to 0
+    if (caseCoverRef.current) {
+      const shadow = caseCoverRef.current.querySelector(`.${styles.caseFolderCoverShadow}`);
+      tlClose.to(caseCoverRef.current, { rotateY: 0, duration: 1.5, ease: "power3.inOut" }, 0);
+      if (shadow) {
+        tlClose.to(shadow, { opacity: 1, duration: 0.4 }, 0.5);
+        tlClose.to(shadow, { opacity: 0, duration: 0.3 }, 0.9);
+      }
+    }
+
+    // 4. Folder glides back down to slot, tilting mid-flight
+    if (caseFolderRef.current) {
+      tlClose.to(
+        caseFolderRef.current,
+        { y: folderStartDelta, x: -20, duration: 1.5, ease: "power3.inOut" },
+        0
+      );
+      tlClose.to(
+        caseFolderRef.current,
+        { rotate: 32, duration: 0.65, ease: "power2.out", transformOrigin: "right bottom" },
+        0
+      );
+      tlClose.to(
+        caseFolderRef.current,
+        { rotate: 0, duration: 0.85, ease: "power3.inOut" },
+        0.65
+      );
+    }
+
+    return () => {
+      tlClose.kill();
+    };
+  }, [phase, folderStartDelta, activeGroupIndex]);
 
   // Switch between sibling cases inside open dossier (Pct + Kct)
   const handleSelectCase = (caseIndex: number) => {
@@ -558,9 +638,9 @@ export const FolderStackAnimation: React.FC = () => {
       <header className={styles.theHeader}>
         <div
           className={styles.theLogo}
-          onClick={phase === "case-view" ? handleCloseToStack : undefined}
-          style={{ cursor: phase === "case-view" ? "pointer" : "default" }}
-          title={phase === "case-view" ? "Close dossier and return to archive stack" : "Mosby’s Files"}
+          onClick={phase !== "stack" ? handleCloseToStack : undefined}
+          style={{ cursor: phase !== "stack" ? "pointer" : "default" }}
+          title={phase !== "stack" ? "Close dossier and return to archive stack" : "Mosby’s Files"}
         >
           <svg
             viewBox="0 0 967 145"
@@ -583,107 +663,121 @@ export const FolderStackAnimation: React.FC = () => {
         </nav>
       </header>
 
-      {/* Hero Section */}
-      {phase !== "case-view" && (
-        <section className={styles.sectionHero}>
-          <div className={styles.sectionHeroInner}>
-            <h1 ref={heroTitleRef} className={styles.sectionHeroTitle}>
-              AMERICAN MODERNISM
-            </h1>
-            <p ref={heroDescRef} className={styles.sectionHeroDesc}>
-              A project exploring early 20th-century American architects, contrasting them
-              with European Modernism and revealing a distinct American path of functionalism
-              that shaped contemporary architecture
-            </p>
-          </div>
-        </section>
-      )}
+      {/* Home Scene Container: Stack + Hero */}
+      {(phase === "stack" || phase === "unfolding" || phase === "closing-to-stack") && (
+        <div
+          className={
+            phase !== "stack" ? styles.homeSceneTransitioning : styles.homeScene
+          }
+          style={phase !== "stack" ? { pointerEvents: "none" } : undefined}
+        >
+          {/* Hero Section */}
+          <section className={styles.sectionHero}>
+            <div className={styles.sectionHeroInner}>
+              <h1 ref={heroTitleRef} className={styles.sectionHeroTitle}>
+                AMERICAN MODERNISM
+              </h1>
+              <p ref={heroDescRef} className={styles.sectionHeroDesc}>
+                A project exploring early 20th-century American architects, contrasting them
+                with European Modernism and revealing a distinct American path of functionalism
+                that shaped contemporary architecture
+              </p>
+            </div>
+          </section>
 
-      {/* Main Interactive Scene */}
-      {phase !== "case-view" ? (
-        <div className={styles.pageHomeStack}>
-          <div ref={stackRef} className={styles.stack}>
-            {FOLDER_GROUPS.map((group, gIdx) => {
-              const isLast = gIdx === FOLDER_GROUPS.length - 1;
-              const isHovered = hoveredGroupId === group.groupId;
-              const isRotated = isHovered || (hoveredGroupId === -1 && isLast);
-              const zIndex = group.groupId + 1;
-              const reverseIdx = FOLDER_GROUPS.length - group.groupId - 1;
+          {/* Main Interactive Scene: Stack */}
+          <div className={styles.pageHomeStack}>
+            <div ref={stackRef} className={styles.stack}>
+              {FOLDER_GROUPS.map((group, gIdx) => {
+                const isLast = gIdx === FOLDER_GROUPS.length - 1;
+                const isHovered = hoveredGroupId === group.groupId;
+                const isRotated = isHovered || (hoveredGroupId === -1 && isLast);
+                const zIndex = group.groupId + 1;
+                const reverseIdx = FOLDER_GROUPS.length - group.groupId - 1;
+                const isOpeningGroup =
+                  (phase === "unfolding" || phase === "closing-to-stack") &&
+                  gIdx === activeGroupIndex;
 
-              return (
-                <div
-                  key={group.groupId}
-                  ref={setGroupRef(group.groupId)}
-                  className={`${styles.stackGroup} ${isRotated ? styles.isRotated : ""}`}
-                  style={
-                    {
-                      "--cover-bg-color": group.primaryColor,
-                      "--cover-color": "#FFFFFF",
-                      "--group-id": group.groupId + 1,
-                      "--reverse-idx": reverseIdx,
-                      zIndex: zIndex,
-                    } as React.CSSProperties
-                  }
-                  onMouseEnter={() => setHoveredGroupId(group.groupId)}
-                  onMouseLeave={() => setHoveredGroupId(-1)}
-                >
-                  <div className={styles.stackGroupInner}>
-                    {/* Folder Cover */}
-                    <div
-                      className={`${styles.stackCover} ${isHovered ? styles.isHovered : ""} ${isRotated ? styles.isRotated : ""
+                return (
+                  <div
+                    key={group.groupId}
+                    ref={setGroupRef(group.groupId)}
+                    className={`${styles.stackGroup} ${isRotated ? styles.isRotated : ""}`}
+                    style={
+                      {
+                        "--cover-bg-color": group.primaryColor,
+                        "--cover-color": "#FFFFFF",
+                        "--group-id": group.groupId + 1,
+                        "--reverse-idx": reverseIdx,
+                        zIndex: zIndex,
+                        opacity: isOpeningGroup ? 0 : 1,
+                        pointerEvents: isOpeningGroup ? "none" : undefined,
+                      } as React.CSSProperties
+                    }
+                    onMouseEnter={() => setHoveredGroupId(group.groupId)}
+                    onMouseLeave={() => setHoveredGroupId(-1)}
+                  >
+                    <div className={styles.stackGroupInner}>
+                      {/* Folder Cover */}
+                      <div
+                        className={`${styles.stackCover} ${isHovered ? styles.isHovered : ""} ${
+                          isRotated ? styles.isRotated : ""
                         }`}
-                    >
-                      {/* Category Label and Arrow on top-right */}
-                      <div className={styles.stackCoverCategory}>
-                        <span>{group.category}</span>
-                        <svg
-                          className={styles.arrowIcon}
-                          width="12"
-                          height="12"
-                          viewBox="0 0 12 12"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M6 9.5L1.5 5L2.55 3.95L6 7.4L9.45 3.95L10.5 5L6 9.5Z"
-                            fill="currentColor"
-                          />
-                        </svg>
+                      >
+                        {/* Category Label and Arrow on top-right */}
+                        <div className={styles.stackCoverCategory}>
+                          <span>{group.category}</span>
+                          <svg
+                            className={styles.arrowIcon}
+                            width="12"
+                            height="12"
+                            viewBox="0 0 12 12"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M6 9.5L1.5 5L2.55 3.95L6 7.4L9.45 3.95L10.5 5L6 9.5Z"
+                              fill="currentColor"
+                            />
+                          </svg>
+                        </div>
+
+                        {/* Description on active folder */}
+                        {(isHovered || (hoveredGroupId === -1 && isLast)) && (
+                          <div className={styles.stackCoverDesc}>
+                            {group.description}
+                          </div>
+                        )}
                       </div>
 
-                      {/* Description on active folder */}
-                      {(isHovered || (hoveredGroupId === -1 && isLast)) && (
-                        <div className={styles.stackCoverDesc}>
-                          {group.description}
+                      {/* Stack Pages & Top Tabs */}
+                      <div className={styles.stackPage}>
+                        <div className={styles.stackPageHeader}>
+                          {group.cases.map((c, cIdx) => (
+                            <FolderTab
+                              key={c.slug}
+                              label={c.name}
+                              color={c.color}
+                              textColor={c.textColor}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenFolder(gIdx, cIdx);
+                              }}
+                            />
+                          ))}
                         </div>
-                      )}
-                    </div>
-
-                    {/* Stack Pages & Top Tabs */}
-                    <div className={styles.stackPage}>
-                      <div className={styles.stackPageHeader}>
-                        {group.cases.map((c, cIdx) => (
-                          <FolderTab
-                            key={c.slug}
-                            label={c.name}
-                            color={c.color}
-                            textColor={c.textColor}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenFolder(gIdx, cIdx);
-                            }}
-                          />
-                        ))}
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
-      ) : (
-        /* Full Scrollable Case Dossier View */
+      )}
+
+      {/* Reader View Dossier */}
+      {phase !== "stack" && (
         <ReaderView
           key={activeCase.slug}
           group={activeGroup}
@@ -691,13 +785,17 @@ export const FolderStackAnimation: React.FC = () => {
           activeCaseIndex={activeCaseIndex}
           onSelectCase={handleSelectCase}
           onClose={handleCloseToStack}
+          folderRef={caseFolderRef}
           coverRef={caseCoverRef}
           tagsRef={caseTagsRef}
           scrapbookRef={caseScrapbookRef}
           heroTitleRef={caseHeroTitleRef}
+          initialUnfolded={phase === "case-view"}
+          folderStartDelta={folderStartDelta}
         />
       )}
     </div>
   );
 };
+
 

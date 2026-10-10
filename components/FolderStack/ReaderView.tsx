@@ -17,6 +17,8 @@ interface ReaderViewProps {
   tagsRef?: React.RefObject<HTMLDivElement | null>;
   scrapbookRef?: React.RefObject<HTMLDivElement | null>;
   heroTitleRef?: React.RefObject<HTMLHeadingElement | null>;
+  initialUnfolded?: boolean;
+  folderStartDelta?: number;
 }
 
 interface DraggableItem {
@@ -83,6 +85,8 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   tagsRef,
   scrapbookRef,
   heroTitleRef,
+  initialUnfolded = true,
+  folderStartDelta = 420,
 }) => {
   // Sticky sub-header when scrolled down past hero
   const [isScrolled, setIsScrolled] = useState(false);
@@ -199,7 +203,11 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
             <span
               key={cIdx}
               className="case-char"
-              style={{ display: "inline-block", whiteSpace: "pre" }}
+              style={{
+                display: "inline-block",
+                whiteSpace: "pre",
+                opacity: !initialUnfolded ? 0 : 1,
+              }}
             >
               {char}
             </span>
@@ -211,12 +219,25 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
       <div className={styles.caseContent}>
         <div className={styles.caseContentInner}>
           {/* 3D Case Folder */}
-          <div ref={folderRef} className={styles.caseFolder}>
+          <div
+            ref={folderRef}
+            className={styles.caseFolder}
+            style={
+              !initialUnfolded
+                ? {
+                    transform: `translate3d(-20px, ${folderStartDelta}px, 0) rotate(0deg)`,
+                    transformOrigin: "right bottom",
+                  }
+                : undefined
+            }
+          >
             {/* 3D Flap Cover */}
             <div
               ref={coverRef}
               className={styles.caseFolderCover}
-              style={{ transform: "rotateY(-180deg)" }}
+              style={{
+                transform: !initialUnfolded ? "rotateY(0deg)" : "rotateY(-180deg)",
+              }}
             >
               <div className={styles.caseFolderCoverFront} />
               <div className={styles.caseFolderCoverBack} />
@@ -238,6 +259,10 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                         {
                           zIndex: isActive ? 10 : 5 - idx,
                           "--bg-color": c.color,
+                          transform:
+                            !initialUnfolded && !isActive
+                              ? "translateY(110%)"
+                              : undefined,
                         } as React.CSSProperties
                       }
                     >
@@ -326,7 +351,11 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
               </div>
 
               {/* Authentic Scrapbook Archive (Inside the Dossier Folder) */}
-              <div ref={scrapbookRef} className={styles.caseFolderScrapbook}>
+              <div
+                ref={scrapbookRef}
+                className={styles.caseFolderScrapbook}
+                style={{ opacity: !initialUnfolded ? 0 : 1 }}
+              >
                 {currentCase.slug === "louis-sullivan" ? (
                   <>
                     {/* Cluster 1: Wainwright Building (1890–1891) [top 615px, left 386px] */}

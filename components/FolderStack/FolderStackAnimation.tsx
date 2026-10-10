@@ -6,6 +6,7 @@ import Lenis from "lenis";
 import { FolderGroupConfig, AnimationPhase } from "./types";
 import { FolderTab } from "./FolderTab";
 import { ReaderView } from "./ReaderView";
+import { TheFooter } from "./TheFooter";
 import styles from "./FolderStackAnimation.module.css";
 import { soundFx } from "./soundFx";
 
@@ -68,7 +69,7 @@ export const FOLDER_GROUPS: FolderGroupConfig[] = [
     category: "Expressive",
     primaryColor: "#0F7E53",
     description:
-      "A radical departure from rectilinear rigidity into sculptural dynamism. Architecture that bends, folds, and collides with convention, questioning the boundary between structural enclosure and expressive monumental sculpture.",
+      "Where function alone was never enough. These architects pushed form, material, and structure into territory that was confrontational, sculptural, and deeply personal. Every surface carried an argument, every material choice a point of view. Buildings that refused to stand quietly in the background and never apologized for it.",
     cases: [
       {
         slug: "frank-gehry",
@@ -237,6 +238,7 @@ export const FOLDER_GROUPS: FolderGroupConfig[] = [
 export const FolderStackAnimation: React.FC = () => {
   const [phase, setPhase] = useState<AnimationPhase>("stack");
   const [hoveredGroupId, setHoveredGroupId] = useState<number>(-1);
+  const [unfoldedGroupId, setUnfoldedGroupId] = useState<number>(3); // Group 3 (Contextual Architecture / Red) unfolded by default
   const [activeGroupIndex, setActiveGroupIndex] = useState<number>(3); // Default to Group 4 (Contextual: Mary Colter & Louis Sullivan)
   const [activeCaseIndex, setActiveCaseIndex] = useState<number>(0); // Default to Mary Colter
   const [folderStartDelta, setFolderStartDelta] = useState<number>(420);
@@ -304,6 +306,36 @@ export const FolderStackAnimation: React.FC = () => {
     return () => clearTimeout(timer);
   }, [phase, activeCaseIndex]);
 
+  // Scroll mapping on Home Stack (authentically transitions folder groups as user scrolls)
+  useEffect(() => {
+    if (phase !== "stack") return;
+
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const docHeight =
+        document.documentElement.scrollHeight - window.innerHeight;
+      if (docHeight <= 40) return;
+      const progress = scrollY / docHeight;
+
+      if (scrollY < 30) {
+        setUnfoldedGroupId(3); // Resting top: Red folder open (default Mosby archival state)
+      } else if (progress < 0.28) {
+        setUnfoldedGroupId(0); // Blue
+      } else if (progress < 0.58) {
+        setUnfoldedGroupId(1); // Green
+      } else if (progress < 0.85) {
+        setUnfoldedGroupId(2); // Purple
+      } else {
+        setUnfoldedGroupId(3); // Red
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [phase]);
+
   // Open Folder handler: synchronously measures delta and triggers unfolding phase
   const handleOpenFolder = (groupIndex: number, caseIndex: number) => {
     if (phase === "unfolding" || phase === "case-view" || phase === "closing-to-stack") return;
@@ -358,25 +390,25 @@ export const FolderStackAnimation: React.FC = () => {
       tlEnter.to(heroTitleRef.current, { y: "2rem", opacity: 0, duration: 0.45, stagger: -0.05 }, 0.15);
     }
 
-    // 3. Reader: Folder container glides from slot deltaY up to 0, tilting mid-air
+    // 3. Reader: Folder container glides from slot deltaY up to 0
     if (caseFolderRef.current) {
       tlEnter.fromTo(
         caseFolderRef.current,
-        { y: folderStartDelta, x: -20, transformOrigin: "right bottom" },
+        { y: folderStartDelta, x: 0, transformOrigin: "right bottom" },
         { y: 0, x: 0, duration: 1.5, ease: "power3.inOut" },
         0
       );
 
-      // Authentic physical tilt arc (~32deg peak at 0.65s, levelling back to 0deg flat)
+      // Authentic Mosby flight arc (counter-clockwise tilt easing smoothly flat at 0.7s)
       tlEnter.fromTo(
         caseFolderRef.current,
         { rotate: 0 },
-        { rotate: 32, duration: 0.65, ease: "power2.out" },
+        { rotate: -22.6, duration: 0.65, ease: "power2.out" },
         0
       );
       tlEnter.to(
         caseFolderRef.current,
-        { rotate: 0, duration: 0.85, ease: "power3.inOut", clearProps: "transformOrigin" },
+        { rotate: 0, duration: 0.85, ease: "power3.inOut" },
         0.65
       );
     }
@@ -457,10 +489,11 @@ export const FolderStackAnimation: React.FC = () => {
     if (phase !== "case-view") return;
     soundFx.playFolderFlap();
 
+    // Smoothly glide viewport back to scrollY = 0 in lockstep with the 1.5s flight (Mosby Rct)
     if (typeof window !== "undefined" && window.__lenis) {
-      window.__lenis.scrollTo(0, { duration: 0.4, lock: true });
+      window.__lenis.scrollTo(0, { duration: 1.5, lock: true, force: true });
     } else {
-      window.scrollTo({ top: 0, behavior: "instant" });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
     const items = caseScrapbookRef.current
@@ -486,13 +519,28 @@ export const FolderStackAnimation: React.FC = () => {
   useEffect(() => {
     if (phase !== "closing-to-stack") return;
 
-    // 0. Ensure sibling folders and stack hero start dropped below during flight
+    // Measure live pixel delta between current folder in ReaderView and exact slot in stack
+    const targetEl = groupRefs.current.get(activeGroupIndex);
+    const targetRect = targetEl ? targetEl.getBoundingClientRect() : null;
+    const folderRect = caseFolderRef.current ? caseFolderRef.current.getBoundingClientRect() : null;
+
+    let targetDeltaY = folderStartDelta;
+    let targetDeltaX = 0;
+    let targetWidth: number | string = "100%";
+
+    if (targetRect && folderRect) {
+      targetDeltaY = Math.round(targetRect.top - folderRect.top);
+      targetDeltaX = Math.round(targetRect.left - folderRect.left);
+      targetWidth = Math.round(targetRect.width);
+    }
+
     const allGroups = Array.from(groupRefs.current.entries());
     const siblings = allGroups
       .filter(([id]) => id !== activeGroupIndex)
       .map(([, el]) => el)
       .filter(Boolean);
 
+    // Initial setup: sibling folders and hero text remain dropped/hidden during flight
     gsap.set(siblings, { yPercent: 120 });
     if (heroTitleRef.current) gsap.set(heroTitleRef.current, { y: "2rem", opacity: 0 });
     if (heroDescRef.current) gsap.set(heroDescRef.current, { y: "2rem", opacity: 0 });
@@ -500,18 +548,21 @@ export const FolderStackAnimation: React.FC = () => {
     const tlClose = gsap.timeline({
       defaults: { ease: "power3.inOut", duration: 1.5 },
       onComplete: () => {
+        // 1. Active closing folder has docked seamlessly into its slot
         setPhase("stack");
-        window.scrollTo({ top: 0, behavior: "instant" });
+        if (caseFolderRef.current) {
+          gsap.set(caseFolderRef.current, { clearProps: "all" });
+        }
 
-        // Restore sibling folders and stack hero
+        // 2. ONLY NOW: The rest of the stack folders slide up from below as desired (Mosby zct)
         const tlRestore = gsap.timeline({
-          defaults: { duration: 0.75, ease: "power2.out" },
+          defaults: { duration: 0.85, ease: "power4.out" },
         });
 
         tlRestore.fromTo(
           siblings,
           { yPercent: 120 },
-          { yPercent: 0, duration: 0.85, stagger: 0.08, ease: "power4.out", clearProps: "yPercent" },
+          { yPercent: 0, duration: 0.85, stagger: 0.1, ease: "power4.out", clearProps: "yPercent" },
           0
         );
 
@@ -519,7 +570,7 @@ export const FolderStackAnimation: React.FC = () => {
           tlRestore.fromTo(
             heroTitleRef.current,
             { y: "2rem", opacity: 0 },
-            { y: 0, opacity: 1, duration: 0.85, stagger: 0.2, ease: "power4.out" },
+            { y: 0, opacity: 1, duration: 0.85, stagger: 0.15, ease: "power4.out" },
             0
           );
         }
@@ -528,13 +579,13 @@ export const FolderStackAnimation: React.FC = () => {
             heroDescRef.current,
             { y: "2rem", opacity: 0 },
             { y: 0, opacity: 1, duration: 0.65, ease: "power2.out" },
-            0.3
+            0.25
           );
         }
       },
     });
 
-    // 1. Title chars exit left
+    // 1. Case hero title chars exit left
     if (caseHeroTitleRef.current) {
       const chars = caseHeroTitleRef.current.querySelectorAll(".case-char");
       tlClose.to(chars, { xPercent: -150, opacity: 0, duration: 0.8, stagger: 0.02, ease: "power2.in" }, 0);
@@ -545,7 +596,7 @@ export const FolderStackAnimation: React.FC = () => {
       tlClose.to(caseTagsRef.current.children, { yPercent: 110, duration: 0.65, ease: "power3.in" }, 0);
     }
 
-    // 3. 3D Flap rotates shut from -180 back to 0
+    // 3. 3D Flap Cover folds shut from -180 back to 0
     if (caseCoverRef.current) {
       const shadow = caseCoverRef.current.querySelector(`.${styles.caseFolderCoverShadow}`);
       tlClose.to(caseCoverRef.current, { rotateY: 0, duration: 1.5, ease: "power3.inOut" }, 0);
@@ -555,22 +606,32 @@ export const FolderStackAnimation: React.FC = () => {
       }
     }
 
-    // 4. Folder glides back down to slot, tilting mid-flight
+    // 4. Folder glides down to its exact slot in stack (targetDeltaX, targetDeltaY, targetWidth)
     if (caseFolderRef.current) {
       tlClose.to(
         caseFolderRef.current,
-        { y: folderStartDelta, x: -20, duration: 1.5, ease: "power3.inOut" },
+        {
+          y: targetDeltaY,
+          x: targetDeltaX,
+          width: targetWidth,
+          duration: 1.5,
+          ease: "power3.inOut",
+          transformOrigin: "right bottom",
+        },
+        0
+      );
+
+      // Symmetrical flight arc: tilts smoothly into the air to -22.6deg, then eases smoothly back to 0deg
+      // KEEPING transformOrigin: "right bottom" throughout the flight (NO mid-flight clearProps snap!)
+      tlClose.to(
+        caseFolderRef.current,
+        { rotate: -22.6, duration: 0.6, ease: "sine.inOut" },
         0
       );
       tlClose.to(
         caseFolderRef.current,
-        { rotate: 32, duration: 0.65, ease: "power2.out", transformOrigin: "right bottom" },
-        0
-      );
-      tlClose.to(
-        caseFolderRef.current,
-        { rotate: 0, duration: 0.85, ease: "power3.inOut" },
-        0.65
+        { rotate: 0, duration: 0.9, ease: "sine.inOut" },
+        0.6
       );
     }
 
@@ -689,9 +750,13 @@ export const FolderStackAnimation: React.FC = () => {
           <div className={styles.pageHomeStack}>
             <div ref={stackRef} className={styles.stack}>
               {FOLDER_GROUPS.map((group, gIdx) => {
+                const currentActiveGroup =
+                  hoveredGroupId !== -1 ? hoveredGroupId : unfoldedGroupId;
+                const isThisUnfolded = currentActiveGroup === group.groupId;
+                // Groups strictly below the active unfolded group drop down (Mosby accordion slide)
+                const isDropped = group.groupId > currentActiveGroup;
                 const isLast = gIdx === FOLDER_GROUPS.length - 1;
                 const isHovered = hoveredGroupId === group.groupId;
-                const isRotated = isHovered || (hoveredGroupId === -1 && isLast);
                 const zIndex = group.groupId + 1;
                 const reverseIdx = FOLDER_GROUPS.length - group.groupId - 1;
                 const isOpeningGroup =
@@ -702,7 +767,9 @@ export const FolderStackAnimation: React.FC = () => {
                   <div
                     key={group.groupId}
                     ref={setGroupRef(group.groupId)}
-                    className={`${styles.stackGroup} ${isRotated ? styles.isRotated : ""}`}
+                    className={`${styles.stackGroup} ${
+                      isDropped ? styles.isUnfolded : ""
+                    } ${isHovered ? styles.isRotated : ""}`}
                     style={
                       {
                         "--cover-bg-color": group.primaryColor,
@@ -720,12 +787,19 @@ export const FolderStackAnimation: React.FC = () => {
                     <div className={styles.stackGroupInner}>
                       {/* Folder Cover */}
                       <div
-                        className={`${styles.stackCover} ${isHovered ? styles.isHovered : ""} ${
-                          isRotated ? styles.isRotated : ""
-                        }`}
+                        className={`${styles.stackCover} ${
+                          isHovered ? styles.isHovered : ""
+                        } ${isThisUnfolded ? styles.isUnfolded : ""}`}
+                        onClick={() => setUnfoldedGroupId(group.groupId)}
                       >
                         {/* Category Label and Arrow on top-right */}
-                        <div className={styles.stackCoverCategory}>
+                        <div
+                          className={styles.stackCoverCategory}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setUnfoldedGroupId(group.groupId);
+                          }}
+                        >
                           <span>{group.category}</span>
                           <svg
                             className={styles.arrowIcon}
@@ -743,15 +817,28 @@ export const FolderStackAnimation: React.FC = () => {
                         </div>
 
                         {/* Description on active folder */}
-                        {(isHovered || (hoveredGroupId === -1 && isLast)) && (
+                        {isThisUnfolded && (
                           <div className={styles.stackCoverDesc}>
                             {group.description}
                           </div>
                         )}
+
+                        {/* Archival Footer on Group 3 (Red) */}
+                        {isLast && <TheFooter />}
                       </div>
 
                       {/* Stack Pages & Top Tabs */}
                       <div className={styles.stackPage}>
+                        {/* Right Unfold Area (click/hover trigger for category) */}
+                        <div
+                          className={styles.stackPageUnfoldArea}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setUnfoldedGroupId(group.groupId);
+                          }}
+                          onMouseEnter={() => setHoveredGroupId(group.groupId)}
+                        />
+
                         <div className={styles.stackPageHeader}>
                           {group.cases.map((c, cIdx) => (
                             <FolderTab
@@ -790,7 +877,7 @@ export const FolderStackAnimation: React.FC = () => {
           tagsRef={caseTagsRef}
           scrapbookRef={caseScrapbookRef}
           heroTitleRef={caseHeroTitleRef}
-          initialUnfolded={phase === "case-view"}
+          initialUnfolded={phase === "case-view" || phase === "closing-to-stack"}
           folderStartDelta={folderStartDelta}
         />
       )}

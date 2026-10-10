@@ -3,120 +3,122 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import styles from "./ReferenceInspector.module.css";
 
-interface FrameItem {
-  index: number;
+type MotionMode = "open" | "close";
+type ViewMode = "split" | "onion" | "difference" | "mosby-only" | "local-only";
+
+interface FrameMetadata {
+  frameIndex: number;
+  timestampMs: number;
   file: string;
   url: string;
-  category: "idle" | "hover" | "unfold" | "scroll";
 }
 
-interface ReferenceInspectorProps {
-  onOverlayOpacityChange?: (opacity: number) => void;
-  currentOverlayFrameUrl?: string;
+interface TelemetryPoint {
+  frameIndex: number;
+  timestampMs: number;
+  file: string;
+  caseFolder?: {
+    rect?: { top: number; left: number; width: number; height: number };
+    transform?: string;
+    opacity?: string;
+  } | null;
+  cover?: {
+    transform?: string;
+  } | null;
+  activeGroupInStack?: {
+    rect?: { top: number; left: number; width: number; height: number };
+    opacity?: string;
+  } | null;
+  heroTitle?: {
+    opacity?: string;
+    transform?: string;
+  } | null;
+  scrapbook?: {
+    opacity?: string;
+  } | null;
 }
 
-export const ReferenceInspector: React.FC<ReferenceInspectorProps> = ({
-  onOverlayOpacityChange,
-}) => {
+export const ReferenceInspector: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [frames, setFrames] = useState<FrameItem[]>([]);
+  const [motionMode, setMotionMode] = useState<MotionMode>("open");
+  const [viewMode, setViewMode] = useState<ViewMode>("split");
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [speed, setSpeed] = useState<number>(0.5); // Default to 0.5x for analytical inspection
-  const [overlayOpacity, setOverlayOpacity] = useState<number>(0);
-  const [rangeMode, setRangeMode] = useState<"all" | "unfold" | "scroll">("unfold");
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [speed, setSpeed] = useState<number>(0.5);
+  const [onionOpacity, setOnionOpacity] = useState<number>(0.5);
+  const [showPageGhost, setShowPageGhost] = useState<boolean>(false);
+
+  // Manifests & Telemetry
+  const [mosbyFrames, setMosbyFrames] = useState<FrameMetadata[]>([]);
+  const [localFrames, setLocalFrames] = useState<FrameMetadata[]>([]);
+  const [mosbyTelemetry, setMosbyTelemetry] = useState<TelemetryPoint[]>([]);
+  const [localTelemetry, setLocalTelemetry] = useState<TelemetryPoint[]>([]);
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Load manifest
+  // Load manifest & telemetry for current motionMode
   useEffect(() => {
-    fetch("/reference_frames/manifest.json")
-      .then((r) => r.json())
-      .then((data: FrameItem[]) => {
-        setFrames(data);
-        // Start on unfold frames if rangeMode is unfold
-        const firstUnfold = data.findIndex((f) => f.category === "unfold");
-        if (firstUnfold !== -1) setCurrentIndex(firstUnfold);
-      })
-      .catch((err) => console.error("Failed to load reference frames:", err));
-  }, []);
+    const mosbyFolder = motionMode === "open" ? "mosby_open" : "mosby_close";
+    const localFolder = motionMode === "open" ? "local_open" : "local_close";
 
-  // Filter indices based on rangeMode
-  const getFilteredIndices = useCallback(() => {
-    if (!frames.length) return [0];
-    if (rangeMode === "unfold") {
-      const indices: number[] = [];
-      frames.forEach((f, idx) => {
-        if (f.category === "unfold" || f.category === "idle" || f.category === "hover") indices.push(idx);
-      });
-      return indices.length ? indices : frames.map((_, i) => i);
-    }
-    if (rangeMode === "scroll") {
-      const indices: number[] = [];
-      frames.forEach((f, idx) => {
-        if (f.category === "scroll") indices.push(idx);
-      });
-      return indices.length ? indices : frames.map((_, i) => i);
-    }
-    return frames.map((_, i) => i);
-  }, [frames, rangeMode]);
+    Promise.all([
+      fetch(`/motion_reference/${mosbyFolder}/manifest.json`).then((r) => r.json()).catch(() => []),
+      fetch(`/motion_reference/${localFolder}/manifest.json`).then((r) => r.json()).catch(() => []),
+      fetch(`/motion_reference/${mosbyFolder}/telemetry.json`).then((r) => r.json()).catch(() => []),
+      fetch(`/motion_reference/${localFolder}/telemetry.json`).then((r) => r.json()).catch(() => []),
+    ]).then(([mFrames, lFrames, mTelem, lTelem]) => {
+      setMosbyFrames(mFrames);
+      setLocalFrames(lFrames);
+      setMosbyTelemetry(mTelem);
+      setLocalTelemetry(lTelem);
+    });
+  }, [motionMode]);
 
-  // Frame looping engine
+  const totalFrames = Math.max(mosbyFrames.length, localFrames.length, 45);
+
+  // Playback Loop
   useEffect(() => {
-    if (!isPlaying || !frames.length) {
+    if (!isPlaying) {
       if (intervalRef.current) clearInterval(intervalRef.current);
       return;
     }
 
-    const filtered = getFilteredIndices();
-    const msPerFrame = (1000 / 24) / speed; // Base 24fps adjusted by playback speed
-
+    const msPerFrame = (1000 / 20) / speed; // 50ms intervals = 20fps baseline
     intervalRef.current = setInterval(() => {
-      setCurrentIndex((prev) => {
-        const curFilteredPos = filtered.indexOf(prev);
-        if (curFilteredPos === -1 || curFilteredPos >= filtered.length - 1) {
-          return filtered[0];
-        }
-        return filtered[curFilteredPos + 1];
-      });
+      setCurrentIndex((prev) => (prev + 1) % totalFrames);
     }, msPerFrame);
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [isPlaying, speed, frames, getFilteredIndices]);
+  }, [isPlaying, speed, totalFrames]);
 
-  // Sync onion skin opacity outward
-  const handleOpacityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseFloat(e.target.value);
-    setOverlayOpacity(val);
-    if (onOverlayOpacityChange) {
-      onOverlayOpacityChange(val);
-    }
-  };
-
-  const handleStep = (direction: -1 | 1) => {
+  const handleStep = useCallback((dir: -1 | 1) => {
     setIsPlaying(false);
-    const filtered = getFilteredIndices();
-    const curPos = filtered.indexOf(currentIndex);
-    if (curPos === -1) {
-      setCurrentIndex(filtered[0]);
-      return;
-    }
-    const nextPos = (curPos + direction + filtered.length) % filtered.length;
-    setCurrentIndex(filtered[nextPos]);
-  };
+    setCurrentIndex((prev) => (prev + dir + totalFrames) % totalFrames);
+  }, [totalFrames]);
 
-  const currentFrame = frames[currentIndex];
+  // Keyboard navigation
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") handleStep(-1);
+      if (e.key === "ArrowRight") handleStep(1);
+      if (e.key === " ") {
+        e.preventDefault();
+        setIsPlaying((p) => !p);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, handleStep]);
 
-  // Helper description of current animation phase based on index
-  const getPhaseDescription = (idx: number) => {
-    if (idx <= 1) return "Initial Idle Stack & 3D Hover Tilt";
-    if (idx >= 2 && idx <= 8) return "Cover Flap Lift (rotateY 0° -> -45°), Sibling Folders Drop (yPercent: 120)";
-    if (idx >= 9 && idx <= 18) return "3D Flap Inversion (rotateY -45° -> -180°), Front Shadow Ramp & Fade";
-    if (idx >= 19 && idx <= 36) return "Flap Fully Open (-180°), Sheet & Punch-Holes Reveal, Right Tags Slide In";
-    return "Case Scroll: Dossier Text, Draggable Scrapbook Elements, Next Architect Widget";
-  };
+  const currentMosby = mosbyFrames[currentIndex];
+  const currentLocal = localFrames[currentIndex];
+  const currentMosbyTelem = mosbyTelemetry[currentIndex];
+  const currentLocalTelem = localTelemetry[currentIndex];
+
+  const currentMs = currentIndex * 50;
 
   return (
     <>
@@ -125,76 +127,226 @@ export const ReferenceInspector: React.FC<ReferenceInspectorProps> = ({
         <button
           onClick={() => setIsOpen(!isOpen)}
           className={styles.launcherBtn}
-          title="Toggle Ground-Truth Reference Frame Inspector"
+          title="Toggle Motion Studio & Ground-Truth Frame Inspector"
         >
           <span className={styles.pulseDot} />
-          <span>🎥 Frame Inspector ({frames.length} Ground-Truth Frames)</span>
+          <span>🎬 Motion Studio ({motionMode.toUpperCase()}: {currentMs}ms)</span>
         </button>
       </div>
 
-      {/* Full-Screen Onion Skin Overlay when enabled */}
-      {overlayOpacity > 0 && currentFrame && (
-        <div
-          className={styles.onionSkinOverlay}
-          style={{ opacity: overlayOpacity }}
-        >
+      {/* Full-Screen Page Ghost Overlay (optional projection onto live DOM) */}
+      {showPageGhost && currentMosby && (
+        <div className={styles.fullPageGhost} style={{ opacity: onionOpacity }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={currentFrame.url}
-            alt="Reference Frame Overlay"
-            className={styles.onionSkinImg}
+            src={currentMosby.url}
+            alt="Ground Truth Ghost Overlay"
+            className={styles.ghostImg}
           />
         </div>
       )}
 
-      {/* Main Inspector Panel Modal */}
+      {/* Main Studio Modal */}
       {isOpen && (
-        <aside className={styles.panel}>
-          <div className={styles.panelHeader}>
-            <div className={styles.titleGroup}>
-              <h3 className={styles.panelTitle}>Ground-Truth Mosby Files Inspector</h3>
-              <span className={styles.liveBadge}>LIVE CAPTURE 60FPS</span>
+        <aside className={styles.studioPanel}>
+          {/* Header & Tabs */}
+          <div className={styles.studioHeader}>
+            <div className={styles.headerTitleGroup}>
+              <h2 className={styles.studioTitle}>Mosby Motion Studio</h2>
+              <span className={styles.timestampBadge}>{currentMs}ms / 2200ms</span>
             </div>
+
+            {/* Mode Switch: Open vs Close */}
+            <div className={styles.modeTabs}>
+              <button
+                className={`${styles.modeTab} ${motionMode === "open" ? styles.modeTabActive : ""}`}
+                onClick={() => {
+                  setMotionMode("open");
+                  setCurrentIndex(0);
+                }}
+              >
+                📂 Open Motion
+              </button>
+              <button
+                className={`${styles.modeTab} ${motionMode === "close" ? styles.modeTabActive : ""}`}
+                onClick={() => {
+                  setMotionMode("close");
+                  setCurrentIndex(0);
+                }}
+              >
+                📁 Close Motion
+              </button>
+            </div>
+
             <button
               onClick={() => setIsOpen(false)}
               className={styles.closeBtn}
-              aria-label="Close Inspector"
+              aria-label="Close Studio"
             >
               ✕
             </button>
           </div>
 
-          {/* Current Frame Preview */}
-          <div className={styles.viewerContainer}>
-            {currentFrame ? (
-              <div className={styles.frameWrapper}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={currentFrame.url}
-                  alt={`Frame ${currentIndex + 1}`}
-                  className={styles.frameImage}
-                />
-                <div className={styles.frameBadge}>
-                  Frame {currentIndex + 1} / {frames.length} ({currentFrame.category})
+          {/* View Mode Toolbar */}
+          <div className={styles.viewToolbar}>
+            <span className={styles.toolLabel}>View Mode:</span>
+            <div className={styles.toolButtonGroup}>
+              <button
+                className={`${styles.toolBtn} ${viewMode === "split" ? styles.toolBtnActive : ""}`}
+                onClick={() => setViewMode("split")}
+              >
+                🔲 Split Side-by-Side
+              </button>
+              <button
+                className={`${styles.toolBtn} ${viewMode === "onion" ? styles.toolBtnActive : ""}`}
+                onClick={() => setViewMode("onion")}
+              >
+                🧅 Onion-Skin
+              </button>
+              <button
+                className={`${styles.toolBtn} ${viewMode === "difference" ? styles.toolBtnActive : ""}`}
+                onClick={() => setViewMode("difference")}
+              >
+                ⚡ Difference Mode
+              </button>
+              <button
+                className={`${styles.toolBtn} ${viewMode === "mosby-only" ? styles.toolBtnActive : ""}`}
+                onClick={() => setViewMode("mosby-only")}
+              >
+                Mosby Only
+              </button>
+              <button
+                className={`${styles.toolBtn} ${viewMode === "local-only" ? styles.toolBtnActive : ""}`}
+                onClick={() => setViewMode("local-only")}
+              >
+                Local Only
+              </button>
+            </div>
+
+            {/* Ghost to Page Toggle */}
+            <label className={styles.ghostCheckbox}>
+              <input
+                type="checkbox"
+                checked={showPageGhost}
+                onChange={(e) => setShowPageGhost(e.target.checked)}
+              />
+              <span>Ghost to Live Page</span>
+            </label>
+          </div>
+
+          {/* Frame Display Canvas */}
+          <div className={styles.canvasContainer}>
+            {viewMode === "split" && (
+              <div className={styles.splitGrid}>
+                {/* Left: Mosby Ground Truth */}
+                <div className={styles.pane}>
+                  <div className={styles.paneBadge}>MOSBY (GROUND TRUTH)</div>
+                  {currentMosby ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={currentMosby.url} alt="Mosby Frame" className={styles.paneImg} />
+                  ) : (
+                    <div className={styles.paneEmpty}>No frame</div>
+                  )}
+                </div>
+
+                {/* Right: Local Implementation */}
+                <div className={styles.pane}>
+                  <div className={`${styles.paneBadge} ${styles.paneBadgeLocal}`}>LOCAL IMPLEMENTATION</div>
+                  {currentLocal ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={currentLocal.url} alt="Local Frame" className={styles.paneImg} />
+                  ) : (
+                    <div className={styles.paneEmpty}>No frame</div>
+                  )}
                 </div>
               </div>
-            ) : (
-              <div className={styles.loadingBox}>Loading reference frames...</div>
+            )}
+
+            {(viewMode === "onion" || viewMode === "difference") && (
+              <div className={styles.onionContainer}>
+                {/* Background: Local */}
+                {currentLocal && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={currentLocal.url} alt="Local Frame" className={styles.onionBase} />
+                )}
+                {/* Foreground: Mosby with adjustable opacity or difference */}
+                {currentMosby && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={currentMosby.url}
+                    alt="Mosby Overlay"
+                    className={`${styles.onionTop} ${viewMode === "difference" ? styles.onionDiff : ""}`}
+                    style={{ opacity: viewMode === "difference" ? 1 : onionOpacity }}
+                  />
+                )}
+                <div className={styles.onionLegend}>
+                  <span>Base: Local</span> • <span>Overlay: Mosby ({Math.round(onionOpacity * 100)}%)</span>
+                </div>
+              </div>
+            )}
+
+            {viewMode === "mosby-only" && currentMosby && (
+              <div className={styles.singleContainer}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={currentMosby.url} alt="Mosby Only" className={styles.paneImg} />
+                <div className={styles.paneBadge}>MOSBY GROUND TRUTH ({currentMs}ms)</div>
+              </div>
+            )}
+
+            {viewMode === "local-only" && currentLocal && (
+              <div className={styles.singleContainer}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={currentLocal.url} alt="Local Only" className={styles.paneImg} />
+                <div className={`${styles.paneBadge} ${styles.paneBadgeLocal}`}>LOCAL IMPLEMENTATION ({currentMs}ms)</div>
+              </div>
             )}
           </div>
 
-          {/* Phase Telemetry Banner */}
-          <div className={styles.phaseBanner}>
-            <div className={styles.phaseLabel}>GROUND-TRUTH PHASE:</div>
-            <div className={styles.phaseDesc}>{getPhaseDescription(currentIndex)}</div>
+          {/* Telemetry Comparison HUD */}
+          <div className={styles.telemetryHud}>
+            <div className={styles.telemetryCol}>
+              <div className={styles.telemHeader}>MOSBY TELEMETRY</div>
+              <div className={styles.telemRow}>
+                <span className={styles.telemKey}>Folder Transform:</span>
+                <span className={styles.telemVal}>{currentMosbyTelem?.caseFolder?.transform || "none"}</span>
+              </div>
+              <div className={styles.telemRow}>
+                <span className={styles.telemKey}>Flap Cover:</span>
+                <span className={styles.telemVal}>{currentMosbyTelem?.cover?.transform || "none"}</span>
+              </div>
+              <div className={styles.telemRow}>
+                <span className={styles.telemKey}>Hero Opacity:</span>
+                <span className={styles.telemVal}>{currentMosbyTelem?.heroTitle?.opacity || "0"}</span>
+              </div>
+            </div>
+
+            <div className={styles.telemetryCol}>
+              <div className={`${styles.telemHeader} ${styles.telemHeaderLocal}`}>LOCAL TELEMETRY</div>
+              <div className={styles.telemRow}>
+                <span className={styles.telemKey}>Folder Transform:</span>
+                <span className={styles.telemVal}>{currentLocalTelem?.caseFolder?.transform || "none"}</span>
+              </div>
+              <div className={styles.telemRow}>
+                <span className={styles.telemKey}>Flap Cover:</span>
+                <span className={styles.telemVal}>{currentLocalTelem?.cover?.transform || "none"}</span>
+              </div>
+              <div className={styles.telemRow}>
+                <span className={styles.telemKey}>Hero Opacity:</span>
+                <span className={styles.telemVal}>{currentLocalTelem?.heroTitle?.opacity || "0"}</span>
+              </div>
+            </div>
           </div>
 
-          {/* Scrubber Bar */}
-          <div className={styles.scrubberRow}>
+          {/* Time Scrubber Bar */}
+          <div className={styles.scrubberSection}>
+            <div className={styles.scrubberHeader}>
+              <span className={styles.scrubberTime}>Frame {currentIndex + 1} of {totalFrames}</span>
+              <span className={styles.scrubberMs}>{currentMs}ms</span>
+            </div>
             <input
               type="range"
               min={0}
-              max={Math.max(0, frames.length - 1)}
+              max={totalFrames - 1}
               value={currentIndex}
               onChange={(e) => {
                 setIsPlaying(false);
@@ -204,33 +356,42 @@ export const ReferenceInspector: React.FC<ReferenceInspectorProps> = ({
             />
           </div>
 
-          {/* Player Controls */}
-          <div className={styles.controlsRow}>
-            <div className={styles.btnGroup}>
-              <button
-                onClick={() => handleStep(-1)}
-                className={styles.ctrlBtn}
-                title="Previous Frame (Left Arrow)"
-              >
-                ⏮ Step
+          {/* Controls Bar */}
+          <div className={styles.controlsBar}>
+            <div className={styles.playbackGroup}>
+              <button onClick={() => handleStep(-1)} className={styles.ctrlBtn} title="Step -50ms (Left Arrow)">
+                ⏮ -50ms
               </button>
               <button
                 onClick={() => setIsPlaying(!isPlaying)}
                 className={`${styles.ctrlBtn} ${isPlaying ? styles.activeCtrlBtn : ""}`}
               >
-                {isPlaying ? "⏸ Pause Loop" : "▶ Play Loop"}
+                {isPlaying ? "⏸ Pause" : "▶ Play Loop"}
               </button>
-              <button
-                onClick={() => handleStep(1)}
-                className={styles.ctrlBtn}
-                title="Next Frame (Right Arrow)"
-              >
-                Step ⏭
+              <button onClick={() => handleStep(1)} className={styles.ctrlBtn} title="Step +50ms (Right Arrow)">
+                +50ms ⏭
               </button>
             </div>
 
-            {/* Speed Presets */}
-            <div className={styles.speedSelector}>
+            {/* Onion Skin Opacity Slider */}
+            {(viewMode === "onion" || showPageGhost) && (
+              <div className={styles.sliderControl}>
+                <span className={styles.ctrlLabel}>Overlay Opacity:</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={onionOpacity}
+                  onChange={(e) => setOnionOpacity(parseFloat(e.target.value))}
+                  className={styles.opacitySlider}
+                />
+                <span className={styles.sliderVal}>{Math.round(onionOpacity * 100)}%</span>
+              </div>
+            )}
+
+            {/* Playback Speed */}
+            <div className={styles.speedGroup}>
               <span className={styles.ctrlLabel}>Speed:</span>
               {[0.1, 0.25, 0.5, 1.0].map((s) => (
                 <button
@@ -241,53 +402,6 @@ export const ReferenceInspector: React.FC<ReferenceInspectorProps> = ({
                   {s}x
                 </button>
               ))}
-            </div>
-          </div>
-
-          {/* Sequence Loop Range */}
-          <div className={styles.rangeRow}>
-            <span className={styles.ctrlLabel}>Loop Sequence:</span>
-            <div className={styles.btnGroup}>
-              <button
-                onClick={() => setRangeMode("unfold")}
-                className={`${styles.filterBtn} ${rangeMode === "unfold" ? styles.activeFilter : ""}`}
-              >
-                3D Unfold (3-37)
-              </button>
-              <button
-                onClick={() => setRangeMode("scroll")}
-                className={`${styles.filterBtn} ${rangeMode === "scroll" ? styles.activeFilter : ""}`}
-              >
-                Dossier Scroll (38-47)
-              </button>
-              <button
-                onClick={() => setRangeMode("all")}
-                className={`${styles.filterBtn} ${rangeMode === "all" ? styles.activeFilter : ""}`}
-              >
-                All 47 Frames
-              </button>
-            </div>
-          </div>
-
-          {/* Onion-Skin Overlay Slider */}
-          <div className={styles.onionSkinRow}>
-            <div className={styles.onionLabelGroup}>
-              <span className={styles.ctrlLabel}>Onion-Skin Compare:</span>
-              <span className={styles.opacityValue}>{Math.round(overlayOpacity * 100)}%</span>
-            </div>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.05}
-              value={overlayOpacity}
-              onChange={handleOpacityChange}
-              className={styles.onionSlider}
-            />
-            <div className={styles.sliderHints}>
-              <span>0% (Our Live Code)</span>
-              <span>50% (Side-by-Side Blend)</span>
-              <span>100% (Real Site Frame)</span>
             </div>
           </div>
         </aside>

@@ -26,15 +26,14 @@
 
 /* ── Page Container ── */
 .pageHome {
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  min-height: 100vh;
   background-color: #0c0c0d;
   color: #ffffff;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   position: relative;
-  overflow: hidden;
   box-sizing: border-box;
 }
 
@@ -95,20 +94,31 @@
   color: #ffffff;
 }
 
-/* ── Hero Section ── */
+/* ── Hero Section (Exact Mosby 100vh with bottom clearance for stack underlay) ── */
 .sectionHero {
+  height: 100vh;
   width: 100%;
+  padding-block: 1.875rem calc(var(--stack-group-offset) * 3.5 + var(--stack-group-height-sm));
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 100px 24px 20px;
   position: relative;
   z-index: 20;
+  box-sizing: border-box;
 }
 
 .sectionHeroInner {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  height: 100%;
+  justify-content: center;
+  text-align: center;
+  text-wrap: balance;
+  width: 100%;
   max-width: 860px;
   margin: 0 auto;
 }
@@ -121,15 +131,14 @@
   letter-spacing: 0.02em;
   line-height: 0.95;
   color: #ffffff;
-  margin: 0 0 16px 0;
+  margin: 0;
 }
-
 
 .sectionHeroDesc {
   font-family: var(--font-serif-signifier), "Signifier", Georgia, serif;
   font-size: clamp(1rem, 1.35vw, 1.25rem);
   line-height: 1.6;
-  color: #a1a1aa;
+  color: var(--color-gray, #787a7f);
   max-width: 680px;
   margin: 0 auto;
 }
@@ -137,11 +146,9 @@
 /* ── Home Scene Container (Stack + Hero) ── */
 .homeScene {
   width: 100%;
-  height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  flex: 1;
   position: relative;
 }
 
@@ -157,17 +164,12 @@
   z-index: 1 !important;
 }
 
-/* ── Stack Scene ── */
+/* ── Stack Scene (Pulls up under hero on first screen, creates smooth ~380px scroll) ── */
 .pageHomeStack {
+  margin: 0;
   width: 100%;
-  flex: 1;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 0;
-  padding-top: calc(var(--tag-height) + 10px);
   position: relative;
-  overflow: visible;
+  z-index: 30;
 }
 
 .stack {
@@ -175,6 +177,7 @@
   flex-direction: column;
   height: calc(var(--stack-group-height-lg) + var(--stack-group-offset) * 3);
   margin-inline: auto;
+  margin-top: calc(var(--stack-group-offset) * 4 * -1 - var(--stack-group-height-sm) + var(--stack-group-offset));
   perspective: var(--stack-perspective);
   position: relative;
   width: min(90%, 1280px);
@@ -198,6 +201,11 @@
 .stackGroup.isRotated {
   height: calc(var(--stack-group-height-lg) + var(--stack-group-offset) * var(--reverse-idx) - 1rem);
   transform: rotateX(var(--stack-rotation-angle)) translateZ(calc(2px * var(--group-id)));
+}
+
+/* Authentic Mosby Unfolded Accordion State: drops groups below the active group */
+.stackGroup.isUnfolded {
+  height: calc(var(--stack-group-height-lg) - var(--stack-group-height-sm) + var(--stack-group-offset) + var(--stack-group-offset) * var(--reverse-idx));
 }
 
 .stackGroupInner {
@@ -227,6 +235,7 @@
   z-index: 10;
   box-shadow: var(--stack-shadow);
   transition: transform 0.65s cubic-bezier(0.33, 1, 0.68, 1);
+  overflow: hidden;
 }
 
 .stackCoverCategory {
@@ -239,6 +248,9 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding-top: 4px;
+  cursor: pointer;
+  user-select: none;
+  z-index: 15;
 }
 
 .arrowIcon {
@@ -246,14 +258,15 @@
   transition: transform 0.65s cubic-bezier(0.33, 1, 0.68, 1);
 }
 
-.stackCover.isRotated .arrowIcon {
+/* When folder cover is unfolded, chevron points down (0deg); when collapsed, points left (90deg) */
+.stackCover.isUnfolded .arrowIcon {
   transform: rotate(0deg);
 }
 
 .stackCoverDesc {
   align-self: flex-start;
   max-width: 820px;
-  top: calc(var(--stack-group-offset) + 1rem);
+  top: calc(var(--stack-group-offset) + 1.25rem);
   left: 0;
   position: absolute;
   padding-inline: calc(var(--tag-height) * var(--tag-aspect-ratio));
@@ -262,6 +275,136 @@
   line-height: 1.6;
   opacity: 0.95;
   color: #ffffff;
+  pointer-events: none;
+}
+
+/* Unfold area on top-right of folder header */
+.stackPageUnfoldArea {
+  bottom: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 35%;
+  z-index: 25;
+  cursor: pointer;
+}
+
+/* ── The Footer (Archival Context in Group 3) ── */
+.theFooter {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  gap: 2.5rem;
+  text-transform: uppercase;
+  transform: translateZ(1px);
+  width: 100%;
+  bottom: 0;
+  left: 0;
+  padding-block-end: 2.25rem;
+  padding-inline: calc(var(--tag-height) * var(--tag-aspect-ratio));
+  position: absolute;
+  right: 0;
+  transform-style: preserve-3d;
+  transition: transform 0.65s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.65s cubic-bezier(0.33, 1, 0.68, 1);
+  z-index: 20;
+}
+
+.stackCover:not(.isUnfolded) .theFooter {
+  transform: translateY(calc(var(--stack-group-height-sm)));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.stackCover.isUnfolded .theFooter {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.theFooter * {
+  transform-style: preserve-3d;
+}
+
+.theFooter a {
+  pointer-events: auto;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.theFooter a:hover {
+  opacity: 0.8;
+}
+
+.theFooterWindRoses {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.windRose {
+  display: inline-flex;
+  max-width: 4rem;
+  transform-origin: center center;
+  width: 100%;
+}
+
+.windRoseHideOnMobile {
+  display: inline-flex;
+}
+
+@media only screen and (max-width: 768px) {
+  .windRoseHideOnMobile {
+    display: none;
+  }
+}
+
+.windRose img {
+  width: 100%;
+  height: auto;
+  will-change: transform;
+  display: block;
+}
+
+.theFooterBottom {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  width: 100%;
+}
+
+.theFooterScale {
+  width: 8.75rem;
+  height: auto;
+  display: block;
+}
+
+.theFooterYear {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  letter-spacing: 0.05em;
+  color: #ffffff;
+  white-space: nowrap;
+}
+
+.theFooterSignature {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  text-align: right;
+  letter-spacing: 0.05em;
+  color: #ffffff;
+}
+
+.theFooterSignature img {
+  width: 2rem;
+  height: 2rem;
+  display: block;
 }
 
 /* ── Stack Page & Tabs ── */
@@ -303,6 +446,19 @@
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Seamless bottom bleed extension to eliminate hairline gaps against folder covers */
+.tag::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: var(--bg-color);
+  z-index: 4;
+  pointer-events: none;
+}
+
 .tagVisible {
   opacity: 1;
 }
@@ -317,11 +473,13 @@
 }
 
 .tagStart {
-  transform: scale(-1, 1.01) translate(-1px);
+  transform: scale(-1, 1.02) translate(-1px);
+  margin-right: -1px;
 }
 
 .tagEnd {
-  transform: scaleY(1.01) translate(-1px);
+  transform: scaleY(1.02) translate(-1px);
+  margin-left: -1px;
 }
 
 .tagMiddle {
@@ -535,7 +693,7 @@
   display: flex;
   position: absolute;
   right: 0;
-  top: var(--stack-border-radius, 4px);
+  top: 0;
   transform: translate(100%, -100%) rotate(90deg);
   transform-origin: left bottom;
   width: 100%;
@@ -554,9 +712,9 @@
 .caseFolderTagsPage::before {
   background: var(--bg-color, var(--case-color));
   border-radius: var(--stack-border-radius, 4px) var(--stack-border-radius, 4px) 0 0;
-  bottom: 0px;
+  bottom: -2px;
   content: "";
-  height: 20px;
+  height: 24px;
   left: 0px;
   position: absolute;
   width: 100%;
@@ -570,7 +728,7 @@
 /* ── Folder Inner Background ── */
 .caseFolderInner {
   background-color: var(--case-color, #d6231b);
-  border-radius: 0 var(--stack-border-radius) var(--stack-border-radius) 0;
+  border-radius: 0 0 var(--stack-border-radius) 0;
   box-sizing: border-box;
   padding: var(--container-offset) var(--container-offset) var(--container-offset) 0px;
   position: relative;

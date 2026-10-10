@@ -1,0 +1,272 @@
+[
+  {
+    "frameIndex": 0,
+    "timestampMs": 0,
+    "file": "frame_000_0000ms.png",
+    "url": "/motion_reference/local_open/frame_000_0000ms.png"
+  },
+  {
+    "frameIndex": 1,
+    "timestampMs": 50,
+    "file": "frame_001_0050ms.png",
+    "url": "/motion_reference/local_open/frame_001_0050ms.png"
+  },
+  {
+    "frameIndex": 2,
+    "timestampMs": 100,
+    "file": "frame_002_0100ms.png",
+    "url": "/motion_reference/local_open/frame_002_0100ms.png"
+  },
+  {
+    "frameIndex": 3,
+    "timestampMs": 150,
+    "file": "frame_003_0150ms.png",
+    "url": "/motion_reference/local_open/frame_003_0150ms.png"
+  },
+  {
+    "frameIndex": 4,
+    "timestampMs": 200,
+    "file": "frame_004_0200ms.png",
+    "url": "/motion_reference/local_open/frame_004_0200ms.png"
+  },
+  {
+    "frameIndex": 5,
+    "timestampMs": 250,
+    "file": "frame_005_0250ms.png",
+    "url": "/motion_reference/local_open/frame_005_0250ms.png"
+  },
+  {
+    "frameIndex": 6,
+    "timestampMs": 300,
+    "file": "frame_006_0300ms.png",
+    "url": "/motion_reference/local_open/frame_006_0300ms.png"
+  },
+  {
+    "frameIndex": 7,
+    "timestampMs": 350,
+    "file": "frame_007_0350ms.png",
+    "url": "/motion_reference/local_open/frame_007_0350ms.png"
+  },
+  {
+    "frameIndex": 8,
+    "timestampMs": 400,
+    "file": "frame_008_0400ms.png",
+    "url": "/motion_reference/local_open/frame_008_0400ms.png"
+  },
+  {
+    "frameIndex": 9,
+    "timestampMs": 450,
+    "file": "frame_009_0450ms.png",
+    "url": "/motion_reference/local_open/frame_009_0450ms.png"
+  },
+  {
+    "frameIndex": 10,
+    "timestampMs": 500,
+    "file": "frame_010_0500ms.png",
+    "url": "/motion_reference/local_open/frame_010_0500ms.png"
+  },
+  {
+    "frameIndex": 11,
+    "timestampMs": 550,
+    "file": "frame_011_0550ms.png",
+    "url": "/motion_reference/local_open/frame_011_0550ms.png"
+  },
+  {
+    "frameIndex": 12,
+    "timestampMs": 600,
+    "file": "frame_012_0600ms.png",
+    "url": "/motion_reference/local_open/frame_012_0600ms.png"
+  },
+  {
+    "frameIndex": 13,
+    "timestampMs": 650,
+    "file": "frame_013_0650ms.png",
+    "url": "/motion_reference/local_open/frame_013_0650ms.png"
+  },
+  {
+    "frameIndex": 14,
+    "timestampMs": 700,
+    "file": "frame_014_0700ms.png",
+    "url": "/motion_reference/local_open/frame_014_0700ms.png"
+  },
+  {
+    "frameIndex": 15,
+    "timestampMs": 750,
+    "file": "frame_015_0750ms.png",
+    "url": "/motion_reference/local_open/frame_015_0750ms.png"
+  },
+  {
+    "frameIndex": 16,
+    "timestampMs": 800,
+    "file": "frame_016_0800ms.png",
+    "url": "/motion_reference/local_open/frame_016_0800ms.png"
+  },
+  {
+    "frameIndex": 17,
+    "timestampMs": 850,
+    "file": "frame_017_0850ms.png",
+    "url": "/motion_reference/local_open/frame_017_0850ms.png"
+  },
+  {
+    "frameIndex": 18,
+    "timestampMs": 900,
+    "file": "frame_018_0900ms.png",
+    "url": "/motion_reference/local_open/frame_018_0900ms.png"
+  },
+  {
+    "frameIndex": 19,
+    "timestampMs": 950,
+    "file": "frame_019_0950ms.png",
+    "url": "/motion_reference/local_open/frame_019_0950ms.png"
+  },
+  {
+    "frameIndex": 20,
+    "timestampMs": 1000,
+    "file": "frame_020_1000ms.png",
+    "url": "/motion_reference/local_open/frame_020_1000ms.png"
+  },
+  {
+    "frameIndex": 21,
+    "timestampMs": 1050,
+    "file": "frame_021_1050ms.png",
+    "url": "/motion_reference/local_open/frame_021_1050ms.png"
+  },
+  {
+    "frameIndex": 22,
+    "timestampMs": 1100,
+    "file": "frame_022_1100ms.png",
+    "url": "/motion_reference/local_open/frame_022_1100ms.png"
+  },
+  {
+    "frameIndex": 23,
+    "timestampMs": 1150,
+    "file": "frame_023_1150ms.png",
+    "url": "/motion_reference/local_open/frame_023_1150ms.png"
+  },
+  {
+    "frameIndex": 24,
+    "timestampMs": 1200,
+    "file": "frame_024_1200ms.png",
+    "url": "/motion_reference/local_open/frame_024_1200ms.png"
+  },
+  {
+    "frameIndex": 25,
+    "timestampMs": 1250,
+    "file": "frame_025_1250ms.png",
+    "url": "/motion_reference/local_open/frame_025_1250ms.png"
+  },
+  {
+    "frameIndex": 26,
+    "timestampMs": 1300,
+    "file": "frame_026_1300ms.png",
+    "url": "/motion_reference/local_open/frame_026_1300ms.png"
+  },
+  {
+    "frameIndex": 27,
+    "timestampMs": 1350,
+    "file": "frame_027_1350ms.png",
+    "url": "/motion_reference/local_open/frame_027_1350ms.png"
+  },
+  {
+    "frameIndex": 28,
+    "timestampMs": 1400,
+    "file": "frame_028_1400ms.png",
+    "url": "/motion_reference/local_open/frame_028_1400ms.png"
+  },
+  {
+    "frameIndex": 29,
+    "timestampMs": 1450,
+    "file": "frame_029_1450ms.png",
+    "url": "/motion_reference/local_open/frame_029_1450ms.png"
+  },
+  {
+    "frameIndex": 30,
+    "timestampMs": 1500,
+    "file": "frame_030_1500ms.png",
+    "url": "/motion_reference/local_open/frame_030_1500ms.png"
+  },
+  {
+    "frameIndex": 31,
+    "timestampMs": 1550,
+    "file": "frame_031_1550ms.png",
+    "url": "/motion_reference/local_open/frame_031_1550ms.png"
+  },
+  {
+    "frameIndex": 32,
+    "timestampMs": 1600,
+    "file": "frame_032_1600ms.png",
+    "url": "/motion_reference/local_open/frame_032_1600ms.png"
+  },
+  {
+    "frameIndex": 33,
+    "timestampMs": 1650,
+    "file": "frame_033_1650ms.png",
+    "url": "/motion_reference/local_open/frame_033_1650ms.png"
+  },
+  {
+    "frameIndex": 34,
+    "timestampMs": 1700,
+    "file": "frame_034_1700ms.png",
+    "url": "/motion_reference/local_open/frame_034_1700ms.png"
+  },
+  {
+    "frameIndex": 35,
+    "timestampMs": 1750,
+    "file": "frame_035_1750ms.png",
+    "url": "/motion_reference/local_open/frame_035_1750ms.png"
+  },
+  {
+    "frameIndex": 36,
+    "timestampMs": 1800,
+    "file": "frame_036_1800ms.png",
+    "url": "/motion_reference/local_open/frame_036_1800ms.png"
+  },
+  {
+    "frameIndex": 37,
+    "timestampMs": 1850,
+    "file": "frame_037_1850ms.png",
+    "url": "/motion_reference/local_open/frame_037_1850ms.png"
+  },
+  {
+    "frameIndex": 38,
+    "timestampMs": 1900,
+    "file": "frame_038_1900ms.png",
+    "url": "/motion_reference/local_open/frame_038_1900ms.png"
+  },
+  {
+    "frameIndex": 39,
+    "timestampMs": 1950,
+    "file": "frame_039_1950ms.png",
+    "url": "/motion_reference/local_open/frame_039_1950ms.png"
+  },
+  {
+    "frameIndex": 40,
+    "timestampMs": 2000,
+    "file": "frame_040_2000ms.png",
+    "url": "/motion_reference/local_open/frame_040_2000ms.png"
+  },
+  {
+    "frameIndex": 41,
+    "timestampMs": 2050,
+    "file": "frame_041_2050ms.png",
+    "url": "/motion_reference/local_open/frame_041_2050ms.png"
+  },
+  {
+    "frameIndex": 42,
+    "timestampMs": 2100,
+    "file": "frame_042_2100ms.png",
+    "url": "/motion_reference/local_open/frame_042_2100ms.png"
+  },
+  {
+    "frameIndex": 43,
+    "timestampMs": 2150,
+    "file": "frame_043_2150ms.png",
+    "url": "/motion_reference/local_open/frame_043_2150ms.png"
+  },
+  {
+    "frameIndex": 44,
+    "timestampMs": 2200,
+    "file": "frame_044_2200ms.png",
+    "url": "/motion_reference/local_open/frame_044_2200ms.png"
+  }
+]

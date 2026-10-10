@@ -225,7 +225,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
             style={
               !initialUnfolded
                 ? {
-                    transform: `translate3d(-20px, ${folderStartDelta}px, 0) rotate(0deg)`,
+                    transform: `translate3d(0px, ${folderStartDelta}px, 0) rotate(0deg)`,
                     transformOrigin: "right bottom",
                   }
                 : undefined

@@ -1,16 +1,19 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import gsap from "gsap";
 import { FolderGroupConfig, ArchitectCase } from "./types";
 import { FolderTab } from "./FolderTab";
 import styles from "./FolderStackAnimation.module.css";
 import { soundFx } from "./soundFx";
+import { getNextCaseTarget } from "./caseSequence";
 
 interface ReaderViewProps {
   group: FolderGroupConfig;
+  allGroups?: FolderGroupConfig[];
   currentCase: ArchitectCase;
   activeCaseIndex: number;
-  onSelectCase: (index: number) => void;
+  onSelectCase: (groupIndex: number, caseIndex?: number) => void;
   onClose: () => void;
   coverRef?: React.RefObject<HTMLDivElement | null>;
   folderRef?: React.RefObject<HTMLDivElement | null>;
@@ -76,6 +79,7 @@ const LOUIS_SULLIVAN_POSITIONS: Record<string, DraggableItem> = {
 
 export const ReaderView: React.FC<ReaderViewProps> = ({
   group,
+  allGroups,
   currentCase,
   activeCaseIndex,
   onSelectCase,
@@ -88,20 +92,135 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   initialUnfolded = true,
   folderStartDelta = 420,
 }) => {
-  // Sticky sub-header when scrolled down past hero
+  // Mosby Ground-Truth Overscroll Engine
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isNearBottom, setIsNearBottom] = useState(false);
+  const [isWidgetVisible, setIsWidgetVisible] = useState(false);
+  const [isOverscroll, setIsOverscroll] = useState(false);
+  const [overscrollAmount, setOverscrollAmount] = useState(0);
 
+  const overscrollProgress = Math.min(overscrollAmount / 2000, 1);
+
+  const nextTarget = useMemo(() => {
+    return getNextCaseTarget(currentCase.slug, allGroups || [group]);
+  }, [currentCase.slug, allGroups, group]);
+
+  const nextCase = nextTarget.case;
+  const nextGroup = nextTarget.group;
+  const nextGroupIndex = nextTarget.groupIndex;
+  const nextCaseIndex = nextTarget.caseIndex;
+
+  const hasNavigatedRef = useRef(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    hasNavigatedRef.current = false;
+    setOverscrollAmount(0);
+    setIsOverscroll(false);
+  }, [currentCase.slug]);
+
+  const triggerNext = useCallback(() => {
+    if (hasNavigatedRef.current) return;
+    hasNavigatedRef.current = true;
+    soundFx.playPaperRustle();
+    onSelectCase(nextGroupIndex, nextCaseIndex);
+  }, [onSelectCase, nextGroupIndex, nextCaseIndex]);
+
+  // Translate page content smoothly upward with physical resistance as overscroll accumulates
+  useEffect(() => {
+    if (contentRef.current) {
+      gsap.to(contentRef.current, {
+        duration: 0.3,
+        ease: "power1.out",
+        y: `${-5 * overscrollProgress}vh`,
+      });
+    }
+  }, [overscrollProgress]);
+
+  // When overscrollProgress hits 100%, trigger navigation with 350ms momentum delay (matching Mosby)
+  useEffect(() => {
+    if (overscrollProgress >= 1 && !hasNavigatedRef.current) {
+      const timer = setTimeout(() => {
+        triggerNext();
+      }, 350);
+      return () => clearTimeout(timer);
+    }
+  }, [overscrollProgress, triggerNext]);
+
+  // Mosby Ground Truth: Scroll listener with 100px bottom threshold
   useEffect(() => {
     const handleScroll = () => {
       const y = window.scrollY || window.pageYOffset || 0;
-      setIsScrolled(y > 180);
       const scrollMax = document.documentElement.scrollHeight - window.innerHeight;
-      setIsNearBottom(y > 600 || (scrollMax > 0 && y >= scrollMax - 250));
+
+      setIsScrolled(y > 180);
+      setIsWidgetVisible(y > 300);
+
+      // Mosby 1:1: Activate overscroll state only within bottom 100px threshold
+      if (scrollMax > 200 && y >= scrollMax - 100) {
+        setIsOverscroll(true);
+      } else {
+        setIsOverscroll(false);
+        setOverscrollAmount(0);
+      }
     };
+
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    if (typeof window !== "undefined" && (window as unknown as { __lenis?: { on: (event: string, cb: () => void) => void; off: (event: string, cb: () => void) => void } }).__lenis) {
+      (window as unknown as { __lenis: { on: (event: string, cb: () => void) => void; off: (event: string, cb: () => void) => void } }).__lenis.on("scroll", handleScroll);
+    }
+    handleScroll();
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (typeof window !== "undefined" && (window as unknown as { __lenis?: { on: (event: string, cb: () => void) => void; off: (event: string, cb: () => void) => void } }).__lenis) {
+        (window as unknown as { __lenis: { on: (event: string, cb: () => void) => void; off: (event: string, cb: () => void) => void } }).__lenis.off("scroll", handleScroll);
+      }
+    };
   }, []);
+
+  // Mosby Ground Truth: Wheel listener accumulating deltaY up to 2,000px resistance
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      if (hasNavigatedRef.current) return;
+      if (!isOverscroll) return;
+
+      if (e.deltaY > 0) {
+        const delta = Math.min(e.deltaY, 100);
+        setOverscrollAmount((prev) => Math.min(2000, prev + delta));
+      } else if (e.deltaY < 0) {
+        setOverscrollAmount(0);
+      }
+    };
+
+    window.addEventListener("wheel", handleWheel, { passive: true });
+    return () => window.removeEventListener("wheel", handleWheel);
+  }, [isOverscroll]);
+
+  // Touch listener for touch gestures
+  useEffect(() => {
+    let startY = 0;
+    const handleTouchStart = (e: TouchEvent) => {
+      startY = e.touches[0].clientY;
+    };
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isOverscroll || hasNavigatedRef.current) return;
+      const currentY = e.touches[0].clientY;
+      const delta = startY - currentY;
+      if (delta > 0) {
+        setOverscrollAmount((prev) => Math.min(2000, prev + Math.min(delta, 100)));
+      } else if (delta < 0) {
+        setOverscrollAmount(0);
+      }
+      startY = currentY;
+    };
+
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    return () => {
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+    };
+  }, [isOverscroll]);
 
   // Draggable scrapbook states initialized per case
   const [positions, setPositions] = useState<Record<string, DraggableItem>>(() =>
@@ -157,9 +276,6 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
     setActiveDrag(null);
   };
 
-  const nextCaseIndex = (activeCaseIndex + 1) % group.cases.length;
-  const nextCase = group.cases[nextCaseIndex];
-
   return (
     <div
       className={styles.pageCase}
@@ -196,8 +312,10 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
         </div>
       </div>
 
-      {/* Case Hero Title */}
-      <div className={styles.caseHero}>
+      {/* Main Page Case Content Wrapper (lifts on overscroll matching Mosby 1:1) */}
+      <div className={styles.pageCaseContent} ref={contentRef}>
+        {/* Case Hero Title */}
+        <div className={styles.caseHero}>
         <h1 ref={heroTitleRef} className={styles.caseHeroTitle}>
           {currentCase.name.split("").map((char, cIdx) => (
             <span
@@ -929,22 +1047,74 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
         </div>
       </div>
 
-      {/* Pinned Bottom-Right Next Architect Widget */}
-      <div className={`${styles.caseNextWidget} ${isNearBottom ? styles.caseNextWidgetVisible : ""}`}>
+        {/* Emerging Next Folder at bottom of case scroll (Matching Mosby 1:1) */}
         <div
-          className={styles.caseNextCard}
-          style={{ backgroundColor: nextCase.color, cursor: "pointer" }}
-          onClick={() => onSelectCase(nextCaseIndex)}
+          className={styles.caseNextFolder}
+          style={{
+            "--next-folder-bg": nextCase.color,
+            "--next-folder-color": nextCase.theme === "dark" ? "#000000" : "#ffffff",
+          } as React.CSSProperties}
+          onClick={triggerNext}
         >
-          <h4 className={styles.caseNextCardTitle}>{nextCase.name}</h4>
-          <p className={styles.caseNextCardCategory}>{group.category}</p>
+          <div className={styles.caseNextFolderInner}>
+            <h1 className={styles.caseNextFolderTitle}>
+              {nextCase.name}
+            </h1>
+          </div>
         </div>
-        <button
-          onClick={() => onSelectCase(nextCaseIndex)}
-          className={styles.caseNextBtn}
-        >
-          Next →
-        </button>
+      </div>
+
+      {/* Pinned Bottom-Right Next Architect Widget (Matching Mosby 1:1) */}
+      <div
+        className={`${styles.caseNextWidget} ${
+          !isWidgetVisible ? styles.caseNextWidgetDisabled : ""
+        } ${isOverscroll ? styles.caseNextWidgetOverscroll : ""}`}
+        style={{
+          "--next-folder-bg": nextCase.color,
+          "--next-folder-color": nextCase.theme === "dark" ? "#000000" : "#ffffff",
+        } as React.CSSProperties}
+      >
+        {/* Info Card (Square Block above button) */}
+        <div className={styles.caseNextInfo} onClick={triggerNext}>
+          <div className={styles.caseNextInfoInner}>
+            <div className={styles.caseNextName}>{nextCase.name}</div>
+            <div className={styles.caseNextCategory}>{nextGroup.category}</div>
+          </div>
+        </div>
+
+        {/* Action Button & Fill Progress Pill */}
+        <div className={styles.caseNextAction} onClick={triggerNext}>
+          <div className={styles.caseNextActionInner}>
+            <div className={styles.caseNextProgressText}>
+              <span>
+                Keep scrolling
+                <br />
+                for the next page
+              </span>
+            </div>
+            <div className={styles.caseNextBtn}>
+              <span>Next</span>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M4 11V13H16L10.5 18.5L11.92 19.92L19.84 12L11.92 4.08L10.5 5.5L16 11H4Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </div>
+          </div>
+          <div
+            className={styles.caseNextProgress}
+            style={{
+              transform: `translateX(${(-1 + overscrollProgress) * 100}%)`,
+            }}
+          />
+        </div>
       </div>
     </div>
   );

@@ -353,6 +353,7 @@ export const FolderStackAnimation: React.FC = () => {
     setFolderStartDelta(deltaY);
     setActiveGroupIndex(groupIndex);
     setActiveCaseIndex(caseIndex);
+    setUnfoldedGroupId(groupIndex);
     setPhase("unfolding");
   };
 
@@ -640,56 +641,161 @@ export const FolderStackAnimation: React.FC = () => {
     };
   }, [phase, folderStartDelta, activeGroupIndex]);
 
-  // Switch between sibling cases inside open dossier (Pct + Kct)
-  const handleSelectCase = (caseIndex: number) => {
+  // Switch between sibling or cross-group cases inside open dossier (Mosby folder-next vs page-turn)
+  const handleSelectCase = (groupIndexOrCaseIndex: number, maybeCaseIndex?: number) => {
+    let targetGroup = activeGroupIndex;
+    let targetCase = groupIndexOrCaseIndex;
+
+    if (maybeCaseIndex !== undefined) {
+      targetGroup = groupIndexOrCaseIndex;
+      targetCase = maybeCaseIndex;
+    }
+
     soundFx.playPaperRustle();
+
+    const isAtBottom = (typeof window !== "undefined" ? window.scrollY : 0) > 300;
+    const isNextTransition = isAtBottom || targetGroup !== activeGroupIndex;
 
     const items = document.querySelectorAll(`.${styles.scrapbookItemDraggable}`);
     const chars = caseHeroTitleRef.current ? caseHeroTitleRef.current.querySelectorAll(".case-char") : [];
     const cover = caseCoverRef.current;
+    const folder = caseFolderRef.current;
+    const nextFolder = document.querySelector(`.${styles.caseNextFolder}`);
 
-    const tlTurn = gsap.timeline({
-      defaults: { duration: 0.75, ease: "power3.out" },
-      onStart: () => {
-        if (typeof window !== "undefined" && window.__lenis) {
-          window.__lenis.scrollTo(0, { duration: 0.75, force: true });
-        } else {
-          window.scrollTo({ top: 0, behavior: "instant" });
-        }
-      },
-      onComplete: () => {
-        setActiveCaseIndex(caseIndex);
-
-        setTimeout(() => {
-          const newCover = caseCoverRef.current;
-          const newChars = caseHeroTitleRef.current ? caseHeroTitleRef.current.querySelectorAll(".case-char") : [];
-          const newItems = document.querySelectorAll(`.${styles.scrapbookItemDraggable}`);
-
-          const tlEnterNew = gsap.timeline({
-            defaults: { duration: 0.75, ease: "power3.inOut" },
-          });
-
-          if (newCover) {
-            tlEnterNew.fromTo(newCover, { rotateY: 0 }, { rotateY: -180, duration: 0.75 }, 0);
+    if (isNextTransition) {
+      // ── folder-next: Continuous Architect Transition (Mosby jct + Sct) ──
+      // Pure slide-over transition: current case slides up off-screen,
+      // and next open case slides smoothly in from below with NO flap opening re-animation.
+      const tlNextLeave = gsap.timeline({
+        defaults: { duration: 0.35, ease: "power1.in" },
+        onComplete: () => {
+          // Instant reset of scroll position to top
+          if (typeof window !== "undefined" && window.__lenis) {
+            window.__lenis.scrollTo(0, { immediate: true, force: true, lock: true });
+          } else {
+            window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
           }
-          if (newChars.length > 0) {
-            tlEnterNew.from(newChars, { xPercent: 150, opacity: 0, duration: 0.5, stagger: -0.025, ease: "power2.out" }, 0.2);
-          }
-          if (newItems.length > 0) {
-            tlEnterNew.from(newItems, { y: "50vh", duration: 0.5, ease: "power3.out", stagger: 0.04, clearProps: "y" }, 0.55);
-          }
-        }, 50);
-      },
-    });
 
-    if (items.length > 0) {
-      tlTurn.to(items, { y: "50vh", duration: 0.25, ease: "power2.in" }, 0);
-    }
-    if (chars.length > 0) {
-      tlTurn.to(chars, { xPercent: 150, opacity: 0, duration: 0.5, stagger: 0.02, ease: "power2.in" }, 0.15);
-    }
-    if (cover) {
-      tlTurn.fromTo(cover, { rotateY: -180 }, { rotateY: 0, duration: 0.6, ease: "power3.inOut" }, 0.15);
+          setActiveGroupIndex(targetGroup);
+          setActiveCaseIndex(targetCase);
+          setUnfoldedGroupId(targetGroup);
+
+          setTimeout(() => {
+            const newFolder = caseFolderRef.current;
+            const newCover = caseCoverRef.current;
+            const newItems = document.querySelectorAll(`.${styles.scrapbookItemDraggable}`);
+            const newSheet = document.querySelector(`.${styles.caseFolderSheet}`);
+            const newTags = document.querySelectorAll(`.${styles.caseFolderTags} .${styles.tag}`);
+
+            // The dossier is ALREADY OPEN in Reader View - static -180deg, NO flap rotation!
+            if (newCover) {
+              gsap.set(newCover, { rotateY: -180 });
+            }
+
+            const tlNextEnter = gsap.timeline({
+              defaults: { duration: 0.65, ease: "power3.out" },
+              onStart: () => {
+                if (typeof window !== "undefined" && window.__lenis) {
+                  window.__lenis.stop();
+                }
+              },
+              onComplete: () => {
+                if (typeof window !== "undefined" && window.__lenis) {
+                  window.__lenis.start();
+                }
+              },
+            });
+
+            // Smoothly slide the new dossier into Reader View from below
+            if (newFolder) {
+              tlNextEnter.from(newFolder, { y: "45vh", duration: 0.6, ease: "power3.out", clearProps: "y" }, 0);
+            }
+            if (newSheet) {
+              tlNextEnter.from(newSheet, { y: "50vh", duration: 0.65, ease: "power3.out", clearProps: "y" }, 0);
+            }
+            if (caseHeroTitleRef.current) {
+              tlNextEnter.from(
+                caseHeroTitleRef.current,
+                { y: "25vh", scale: 0.88, opacity: 0, duration: 0.6, ease: "power2.out", clearProps: "all" },
+                0
+              );
+            }
+            if (newTags.length > 0) {
+              tlNextEnter.from(
+                newTags,
+                { y: "100%", duration: 0.65, ease: "power3.out", stagger: -0.04, clearProps: "y" },
+                0.05
+              );
+            }
+            if (newItems.length > 0) {
+              tlNextEnter.from(
+                newItems,
+                { y: "30vh", opacity: 0, duration: 0.55, stagger: 0.03, ease: "power3.out", clearProps: "all" },
+                0.15
+              );
+            }
+          }, 30);
+        },
+      });
+
+      if (folder) {
+        tlNextLeave.to(folder, { y: "-75vh", duration: 0.35, ease: "power1.in" }, 0);
+      }
+      if (nextFolder) {
+        tlNextLeave.to(nextFolder, { y: "-15vh", duration: 0.35, ease: "power2.in" }, 0);
+      }
+      if (chars.length > 0) {
+        tlNextLeave.to(chars, { xPercent: -100, opacity: 0, duration: 0.3, stagger: 0.015, ease: "power1.in" }, 0);
+      }
+      if (items.length > 0) {
+        tlNextLeave.to(items, { y: "-30vh", opacity: 0, duration: 0.25, ease: "power1.in" }, 0);
+      }
+    } else {
+      // ── page-turn: In-group Sibling Tag Switch (Mosby Pct + Kct) ──
+      const tlTurn = gsap.timeline({
+        defaults: { duration: 0.55, ease: "power3.out" },
+        onStart: () => {
+          if (typeof window !== "undefined" && window.__lenis) {
+            window.__lenis.scrollTo(0, { duration: 0.55, force: true });
+          } else {
+            window.scrollTo({ top: 0, behavior: "instant" });
+          }
+        },
+        onComplete: () => {
+          setActiveGroupIndex(targetGroup);
+          setActiveCaseIndex(targetCase);
+
+          setTimeout(() => {
+            const newCover = caseCoverRef.current;
+            const newChars = caseHeroTitleRef.current ? caseHeroTitleRef.current.querySelectorAll(".case-char") : [];
+            const newItems = document.querySelectorAll(`.${styles.scrapbookItemDraggable}`);
+
+            const tlEnterNew = gsap.timeline({
+              defaults: { duration: 0.7, ease: "power3.inOut" },
+            });
+
+            if (newCover) {
+              tlEnterNew.fromTo(newCover, { rotateY: 0 }, { rotateY: -180, duration: 0.7 }, 0);
+            }
+            if (newChars.length > 0) {
+              tlEnterNew.from(newChars, { xPercent: 150, opacity: 0, duration: 0.5, stagger: -0.025, ease: "power2.out" }, 0.15);
+            }
+            if (newItems.length > 0) {
+              tlEnterNew.from(newItems, { y: "50vh", duration: 0.5, ease: "power3.out", stagger: 0.04, clearProps: "y" }, 0.3);
+            }
+          }, 40);
+        },
+      });
+
+      if (items.length > 0) {
+        tlTurn.to(items, { y: "50vh", duration: 0.25, ease: "power2.in" }, 0);
+      }
+      if (chars.length > 0) {
+        tlTurn.to(chars, { xPercent: 150, opacity: 0, duration: 0.45, stagger: 0.02, ease: "power2.in" }, 0.1);
+      }
+      if (cover) {
+        tlTurn.fromTo(cover, { rotateY: -180 }, { rotateY: 0, duration: 0.55, ease: "power3.inOut" }, 0.1);
+      }
     }
   };
 
@@ -868,6 +974,7 @@ export const FolderStackAnimation: React.FC = () => {
         <ReaderView
           key={activeCase.slug}
           group={activeGroup}
+          allGroups={FOLDER_GROUPS}
           currentCase={activeCase}
           activeCaseIndex={activeCaseIndex}
           onSelectCase={handleSelectCase}

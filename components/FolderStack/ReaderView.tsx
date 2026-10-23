@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import gsap from "gsap";
 import { FolderGroupConfig, ArchitectCase } from "./types";
 import { FolderTab } from "./FolderTab";
+import { TheFooter } from "./TheFooter";
 import styles from "./FolderStackAnimation.module.css";
 import { soundFx } from "./soundFx";
 import { getNextCaseTarget } from "./caseSequence";
@@ -357,8 +358,43 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                 transform: !initialUnfolded ? "rotateY(0deg)" : "rotateY(-180deg)",
               }}
             >
-              <div className={styles.caseFolderCoverFront} />
-              <div className={styles.caseFolderCoverBack} />
+              <div
+                className={`${styles.caseFolderCoverFront} ${styles.stackCover}`}
+                style={
+                  {
+                    "--first-case-color": group.primaryColor,
+                    "--cover-bg-color": group.primaryColor,
+                    "--cover-color": "#FFFFFF",
+                  } as React.CSSProperties
+                }
+              >
+                {/* Category Label and Arrow on top-right */}
+                <div className={styles.stackCoverCategory}>
+                  <span>{group.category}</span>
+                  <svg
+                    className={styles.arrowIcon}
+                    width="12"
+                    height="12"
+                    viewBox="0 0 12 12"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M6 9.5L1.5 5L2.55 3.95L6 7.4L9.45 3.95L10.5 5L6 9.5Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </div>
+
+                {/* Archival Footer on Group 3 (Red) */}
+                {group.groupId === 3 && <TheFooter />}
+              </div>
+              <div
+                className={styles.caseFolderCoverBack}
+                style={{
+                  backgroundColor: currentCase.color,
+                }}
+              />
               <div className={styles.caseFolderCoverShadow} />
             </div>
 

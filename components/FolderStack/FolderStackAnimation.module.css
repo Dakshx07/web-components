@@ -198,6 +198,10 @@
   cursor: pointer;
 }
 
+.homeSceneTransitioning .stackGroup {
+  transition: none !important;
+}
+
 .stackGroup.isRotated {
   height: calc(var(--stack-group-height-lg) + var(--stack-group-offset) * var(--reverse-idx) - 1rem);
   transform: rotateX(var(--stack-rotation-angle)) translateZ(calc(2px * var(--group-id)));
@@ -669,8 +673,10 @@
 }
 
 .caseFolderCoverFront {
-  background: var(--case-color, #d6231b);
+  background: var(--first-case-color, var(--cover-bg-color, #194bfd));
   z-index: 2;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .caseFolderCoverBack {

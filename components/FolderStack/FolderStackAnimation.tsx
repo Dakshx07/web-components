@@ -873,9 +873,8 @@ export const FolderStackAnimation: React.FC = () => {
                   <div
                     key={group.groupId}
                     ref={setGroupRef(group.groupId)}
-                    className={`${styles.stackGroup} ${
-                      isDropped ? styles.isUnfolded : ""
-                    } ${isHovered ? styles.isRotated : ""}`}
+                    className={`${styles.stackGroup} ${isDropped ? styles.isUnfolded : ""
+                      } ${isHovered ? styles.isRotated : ""}`}
                     style={
                       {
                         "--cover-bg-color": group.primaryColor,
@@ -893,9 +892,8 @@ export const FolderStackAnimation: React.FC = () => {
                     <div className={styles.stackGroupInner}>
                       {/* Folder Cover */}
                       <div
-                        className={`${styles.stackCover} ${
-                          isHovered ? styles.isHovered : ""
-                        } ${isThisUnfolded ? styles.isUnfolded : ""}`}
+                        className={`${styles.stackCover} ${isHovered ? styles.isHovered : ""
+                          } ${isThisUnfolded ? styles.isUnfolded : ""}`}
                         onClick={() => setUnfoldedGroupId(group.groupId)}
                       >
                         {/* Category Label and Arrow on top-right */}

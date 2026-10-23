@@ -1,0 +1,1108 @@
+export interface DraggableItem {
+  id: string;
+  x: number;
+  y: number;
+  rotation: number;
+  zIndex: number;
+}
+
+export interface ScrapbookCard {
+  id: string;
+  title: string;
+  text: string;
+  cardStyle: "teal" | "rose" | "yellow" | "purple";
+  width: string;
+  minHeight: string;
+}
+
+export interface ScrapbookPhoto {
+  id: string;
+  src: string;
+  alt: string;
+  photoStyle: "vintage" | "blueprint" | "postcard";
+  width: string;
+}
+
+export interface ScrapbookClusterConfig {
+  top: string;
+  left: string;
+  width: string;
+  height: string;
+  card: ScrapbookCard;
+  photos: ScrapbookPhoto[];
+  hasPaperclip?: boolean;
+}
+
+export interface ArchitectArchive {
+  slug: string;
+  initialPositions: Record<string, DraggableItem>;
+  clusters: ScrapbookClusterConfig[];
+}
+
+export const ARCHITECT_ARCHIVES: Record<string, ArchitectArchive> = {
+  "frank-lloyd-wright": {
+    slug: "frank-lloyd-wright",
+    initialPositions: {
+      c1Photo1: { id: "c1Photo1", x: -330, y: -90, rotation: 0, zIndex: 10 },
+      c1Pdf: { id: "c1Pdf", x: -290, y: 120, rotation: 0, zIndex: 12 },
+      c1Note: { id: "c1Note", x: 0, y: 0, rotation: 0, zIndex: 14 },
+      c1Photo2: { id: "c1Photo2", x: 260, y: 150, rotation: 2.5, zIndex: 11 },
+      c2Photo1: { id: "c2Photo1", x: 180, y: -80, rotation: 0, zIndex: 10 },
+      c2Photo2: { id: "c2Photo2", x: 300, y: -420, rotation: 0, zIndex: 9 },
+      c2Note: { id: "c2Note", x: 0, y: 0, rotation: 0, zIndex: 14 },
+      c2Photo3: { id: "c2Photo3", x: 340, y: 70, rotation: 0, zIndex: 11 },
+      c3Photo1: { id: "c3Photo1", x: -140, y: -90, rotation: 0, zIndex: 10 },
+      c3Photo2: { id: "c3Photo2", x: -80, y: -350, rotation: 0, zIndex: 9 },
+      c3Note: { id: "c3Note", x: 0, y: 0, rotation: 0, zIndex: 14 },
+      c3Photo3: { id: "c3Photo3", x: 170, y: 190, rotation: 0, zIndex: 11 },
+    },
+    clusters: [
+      {
+        top: "615px",
+        left: "386px",
+        width: "560px",
+        height: "400px",
+        card: {
+          id: "c1Note",
+          title: "ROBIE HOUSE (1909–1910)",
+          text: "The definitive masterpiece of the Prairie School. Continuous horizontal bands of art-glass casement windows, cantilevered roof overhangs, and a low Roman brick core anchored to the midwestern earth.",
+          cardStyle: "teal",
+          width: "560px",
+          minHeight: "400px",
+        },
+        photos: [
+          {
+            id: "c1Photo1",
+            src: "/images/architects/frank-lloyd-wright.avif",
+            alt: "Frank Lloyd Wright at Oak Park Studio",
+            photoStyle: "vintage",
+            width: "480px",
+          },
+          {
+            id: "c1Pdf",
+            src: "/images/architects/pdf2.avif",
+            alt: "Robie House Floor Plan Blueprint",
+            photoStyle: "blueprint",
+            width: "280px",
+          },
+          {
+            id: "c1Photo2",
+            src: "/images/architects/louis-sullivan-01.avif",
+            alt: "Robie House Cantilever Roof View",
+            photoStyle: "vintage",
+            width: "360px",
+          },
+        ],
+      },
+      {
+        top: "1742px",
+        left: "64px",
+        width: "560px",
+        height: "400px",
+        card: {
+          id: "c2Note",
+          title: "FALLINGWATER (1935–1939)",
+          text: "Suspended directly over a running mountain waterfall in Mill Run, Pennsylvania. Reinforced concrete trays cantilever out into the forest canopy, dissolving the boundary between human dwelling and ancient rock.",
+          cardStyle: "rose",
+          width: "560px",
+          minHeight: "400px",
+        },
+        photos: [
+          {
+            id: "c2Photo1",
+            src: "/images/architects/postcard.avif",
+            alt: "Fallingwater Archival Postcard",
+            photoStyle: "postcard",
+            width: "460px",
+          },
+          {
+            id: "c2Photo2",
+            src: "/images/architects/mary-colter-03.avif",
+            alt: "Fallingwater Cantilever Trays",
+            photoStyle: "vintage",
+            width: "380px",
+          },
+          {
+            id: "c2Photo3",
+            src: "/images/architects/louis-sullivan-03.avif",
+            alt: "Bear Run River Bed View",
+            photoStyle: "vintage",
+            width: "440px",
+          },
+        ],
+      },
+      {
+        top: "2746px",
+        left: "193px",
+        width: "560px",
+        height: "400px",
+        card: {
+          id: "c3Note",
+          title: "GUGGENHEIM MUSEUM (1959)",
+          text: "A continuous spiraling white poured-concrete ziggurat on Fifth Avenue. Wright overturned traditional museum gallery wings into an unbroken downward ramp where art and viewer exist in continuous flow.",
+          cardStyle: "yellow",
+          width: "560px",
+          minHeight: "400px",
+        },
+        photos: [
+          {
+            id: "c3Photo1",
+            src: "/images/architects/mary-colter-04.avif",
+            alt: "Guggenheim Spiral Skylight View",
+            photoStyle: "vintage",
+            width: "480px",
+          },
+          {
+            id: "c3Photo2",
+            src: "/images/architects/hopi-house-drawing.avif",
+            alt: "Guggenheim Section Elevation Drawing",
+            photoStyle: "blueprint",
+            width: "420px",
+          },
+          {
+            id: "c3Photo3",
+            src: "/images/architects/louis-sullivan-04.avif",
+            alt: "Curved Gallery Ramp Interior",
+            photoStyle: "vintage",
+            width: "440px",
+          },
+        ],
+      },
+    ],
+  },
+
+  "irving-gill": {
+    slug: "irving-gill",
+    initialPositions: {
+      c1Photo1: { id: "c1Photo1", x: -310, y: -80, rotation: 0, zIndex: 10 },
+      c1Pdf: { id: "c1Pdf", x: -280, y: 130, rotation: 0, zIndex: 12 },
+      c1Note: { id: "c1Note", x: 0, y: 0, rotation: 0, zIndex: 14 },
+      c1Photo2: { id: "c1Photo2", x: 240, y: 160, rotation: 2, zIndex: 11 },
+      c2Photo1: { id: "c2Photo1", x: 190, y: -70, rotation: 0, zIndex: 10 },
+      c2Photo2: { id: "c2Photo2", x: 280, y: -400, rotation: 0, zIndex: 9 },
+      c2Note: { id: "c2Note", x: 0, y: 0, rotation: 0, zIndex: 14 },
+      c2Photo3: { id: "c2Photo3", x: 320, y: 80, rotation: 0, zIndex: 11 },
+      c3Photo1: { id: "c3Photo1", x: -130, y: -85, rotation: 0, zIndex: 10 },
+      c3Photo2: { id: "c3Photo2", x: -70, y: -340, rotation: 0, zIndex: 9 },
+      c3Note: { id: "c3Note", x: 0, y: 0, rotation: 0, zIndex: 14 },
+      c3Photo3: { id: "c3Photo3", x: 180, y: 180, rotation: 0, zIndex: 11 },
+    },
+    clusters: [
+      {
+        top: "615px",
+        left: "386px",
+        width: "560px",
+        height: "400px",
+        card: {
+          id: "c1Note",
+          title: "DODGE HOUSE (1916)",
+          text: "Pioneering tilt-up reinforced concrete construction in West Hollywood. Gill eliminated mouldings, baseboards, and decorative clutter, creating sanitarily pure interiors lit by arched arcades.",
+          cardStyle: "purple",
+          width: "560px",
+          minHeight: "400px",
+        },
+        photos: [
+          {
+            id: "c1Photo1",
+            src: "/images/architects/irving-gill.avif",
+            alt: "Irving Gill Portrait",
+            photoStyle: "vintage",
+            width: "460px",
+          },
+          {
+            id: "c1Pdf",
+            src: "/images/architects/pdf2.avif",
+            alt: "Dodge House Concrete Wall Slab Diagram",
+            photoStyle: "blueprint",
+            width: "280px",
+          },
+          {
+            id: "c1Photo2",
+            src: "/images/architects/mary-colter-06.avif",
+            alt: "Dodge House Courtyard Arches",
+            photoStyle: "vintage",
+            width: "360px",
+          },
+        ],
+      },
+      {
+        top: "1742px",
+        left: "64px",
+        width: "560px",
+        height: "400px",
+        card: {
+          id: "c2Note",
+          title: "LA JOLLA WOMAN'S CLUB (1914)",
+          text: "Poured-in-place concrete arches framing coastal light. Permanent unadorned materials, flush door frames, and internal courtyard gardens formed a tranquil sanctuary.",
+          cardStyle: "teal",
+          width: "560px",
+          minHeight: "400px",
+        },
+        photos: [
+          {
+            id: "c2Photo1",
+            src: "/images/architects/postcard.avif",
+            alt: "La Jolla Woman's Club Postcard",
+            photoStyle: "postcard",
+            width: "460px",
+          },
+          {
+            id: "c2Photo2",
+            src: "/images/architects/louis-sullivan-05.avif",
+            alt: "Pergola and Concrete Arcade",
+            photoStyle: "vintage",
+            width: "380px",
+          },
+          {
+            id: "c2Photo3",
+            src: "/images/architects/mary-colter-07.avif",
+            alt: "Club Interior Hall",
+            photoStyle: "vintage",
+            width: "420px",
+          },
+        ],
+      },
+      {
+        top: "2746px",
+        left: "193px",
+        width: "560px",
+        height: "400px",
+        card: {
+          id: "c3Note",
+          title: "SCRIPPS RECREATION CENTER (1915)",
+          text: "Monumental unadorned cubic volumes stripped of all European historical references. Smooth white stucco catching the sharp contrast of Southern California shadows.",
+          cardStyle: "rose",
+          width: "560px",
+          minHeight: "400px",
+        },
+        photos: [
+          {
+            id: "c3Photo1",
+            src: "/images/architects/louis-sullivan-06.avif",
+            alt: "Scripps Center Exterior Facade",
+            photoStyle: "vintage",
+            width: "480px",
+          },
+          {
+            id: "c3Photo2",
+            src: "/images/architects/hopi-house-drawing.avif",
+            alt: "Arched Arcade Blueprint",
+            photoStyle: "blueprint",
+            width: "380px",
+          },
+          {
+            id: "c3Photo3",
+            src: "/images/architects/mary-colter-08.avif",
+            alt: "Corner Arcades and Court",
+            photoStyle: "vintage",
+            width: "420px",
+          },
+        ],
+      },
+    ],
+  },
+
+  "frank-gehry": {
+    slug: "frank-gehry",
+    initialPositions: {
+      c1Photo1: { id: "c1Photo1", x: -330, y: -90, rotation: 0, zIndex: 10 },
+      c1Pdf: { id: "c1Pdf", x: -290, y: 120, rotation: 0, zIndex: 12 },
+      c1Note: { id: "c1Note", x: 0, y: 0, rotation: 0, zIndex: 14 },
+      c1Photo2: { id: "c1Photo2", x: 250, y: 155, rotation: 2, zIndex: 11 },
+      c2Photo1: { id: "c2Photo1", x: 185, y: -75, rotation: 0, zIndex: 10 },
+      c2Photo2: { id: "c2Photo2", x: 295, y: -425, rotation: 0, zIndex: 9 },
+      c2Note: { id: "c2Note", x: 0, y: 0, rotation: 0, zIndex: 14 },
+      c2Photo3: { id: "c2Photo3", x: 335, y: 75, rotation: 0, zIndex: 11 },
+      c3Photo1: { id: "c3Photo1", x: -145, y: -90, rotation: 0, zIndex: 10 },
+      c3Photo2: { id: "c3Photo2", x: -80, y: -355, rotation: 0, zIndex: 9 },
+      c3Note: { id: "c3Note", x: 0, y: 0, rotation: 0, zIndex: 14 },
+      c3Photo3: { id: "c3Photo3", x: 175, y: 185, rotation: 0, zIndex: 11 },
+    },
+    clusters: [
+      {
+        top: "615px",
+        left: "386px",
+        width: "560px",
+        height: "400px",
+        card: {
+          id: "c1Note",
+          title: "GEHRY RESIDENCE (1978)",
+          text: "An explosive deconstructivist collision in Santa Monica. Gehry wrapped a standard Dutch colonial house in corrugated aluminum, unfinished plywood, and industrial chain-link fencing.",
+          cardStyle: "teal",
+          width: "560px",
+          minHeight: "400px",
+        },
+        photos: [
+          {
+            id: "c1Photo1",
+            src: "/images/architects/frank-gehry.avif",
+            alt: "Frank Gehry Portrait",
+            photoStyle: "vintage",
+            width: "480px",
+          },
+          {
+            id: "c1Pdf",
+            src: "/images/architects/pdf2.avif",
+            alt: "Santa Monica House Sketch Overlay",
+            photoStyle: "blueprint",
+            width: "280px",
+          },
+          {
+            id: "c1Photo2",
+            src: "/images/architects/mary-colter-04.avif",
+            alt: "Chain-link and Glass Kitchen Angle",
+            photoStyle: "vintage",
+            width: "360px",
+          },
+        ],
+      },
+      {
+        top: "1742px",
+        left: "64px",
+        width: "560px",
+        height: "400px",
+        card: {
+          id: "c2Note",
+          title: "GUGGENHEIM BILBAO (1997)",
+          text: "Over 33,000 extremely thin titanium scales undulating along the Nervión River. CATIA aerospace software allowed sculpture and monumental architecture to merge seamlessly.",
+          cardStyle: "rose",
+          width: "560px",
+          minHeight: "400px",
+        },
+        photos: [
+          {
+            id: "c2Photo1",
+            src: "/images/architects/postcard.avif",
+            alt: "Guggenheim Bilbao Waterfront Postcard",
+            photoStyle: "postcard",
+            width: "460px",
+          },
+          {
+            id: "c2Photo2",
+            src: "/images/architects/louis-sullivan-06.avif",
+            alt: "Titanium Curves and River Reflection",
+            photoStyle: "vintage",
+            width: "380px",
+          },
+          {
+            id: "c2Photo3",
+            src: "/images/architects/mary-colter-08.avif",
+            alt: "Atrium Glass Tower Interior",
+            photoStyle: "vintage",
+            width: "440px",
+          },
+        ],
+      },
+      {
+        top: "2746px",
+        left: "193px",
+        width: "560px",
+        height: "400px",
+        card: {
+          id: "c3Note",
+          title: "WALT DISNEY CONCERT HALL (2003)",
+          text: "Sweeping matte stainless steel sails towering above Grand Avenue in downtown Los Angeles. Acclaimed acoustician Yasuhisa Toyota and Gehry crafted a vineyard-style auditorium of warm Douglas fir.",
+          cardStyle: "yellow",
+          width: "560px",
+          minHeight: "400px",
+        },
+        photos: [
+          {
+            id: "c3Photo1",
+            src: "/images/architects/louis-sullivan-07.avif",
+            alt: "Concert Hall Stainless Steel Facade",
+            photoStyle: "vintage",
+            width: "480px",
+          },
+          {
+            id: "c3Photo2",
+            src: "/images/architects/hopi-house-drawing.avif",
+            alt: "Auditorium Acoustic Modeling Plan",
+            photoStyle: "blueprint",
+            width: "400px",
+          },
+          {
+            id: "c3Photo3",
+            src: "/images/architects/mary-colter-10.avif",
+            alt: "Curved Roof Garden Amphitheater",
+            photoStyle: "vintage",
+            width: "420px",
+          },
+        ],
+      },
+    ],
+  },
+
+  "louis-kahn": {
+    slug: "louis-kahn",
+    initialPositions: {
+      c1Photo1: { id: "c1Photo1", x: -335, y: -90, rotation: 0, zIndex: 10 },
+      c1Pdf: { id: "c1Pdf", x: -300, y: 120, rotation: 0, zIndex: 12 },
+      c1Note: { id: "c1Note", x: 0, y: 0, rotation: 0, zIndex: 14 },
+      c1Photo2: { id: "c1Photo2", x: 260, y: 155, rotation: 2.5, zIndex: 11 },
+      c2Photo1: { id: "c2Photo1", x: 185, y: -75, rotation: 0, zIndex: 10 },
+      c2Photo2: { id: "c2Photo2", x: 300, y: -430, rotation: 0, zIndex: 9 },
+      c2Note: { id: "c2Note", x: 0, y: 0, rotation: 0, zIndex: 14 },
+      c2Photo3: { id: "c2Photo3", x: 335, y: 70, rotation: 0, zIndex: 11 },
+      c3Photo1: { id: "c3Photo1", x: -145, y: -90, rotation: 0, zIndex: 10 },
+      c3Photo2: { id: "c3Photo2", x: -85, y: -360, rotation: 0, zIndex: 9 },
+      c3Note: { id: "c3Note", x: 0, y: 0, rotation: 0, zIndex: 14 },
+      c3Photo3: { id: "c3Photo3", x: 170, y: 190, rotation: 0, zIndex: 11 },
+    },
+    clusters: [
+      {
+        top: "615px",
+        left: "386px",
+        width: "560px",
+        height: "400px",
+        card: {
+          id: "c1Note",
+          title: "SALK INSTITUTE (1959–1965)",
+          text: "A serene travertine courtyard opening onto the limitless horizon of the Pacific Ocean in La Jolla. Raw pozzolanic volcanic concrete towers paired with untreated Burmese teak window assemblies.",
+          cardStyle: "teal",
+          width: "560px",
+          minHeight: "400px",
+        },
+        photos: [
+          {
+            id: "c1Photo1",
+            src: "/images/architects/louis-kahn.avif",
+            alt: "Louis Kahn Portrait",
+            photoStyle: "vintage",
+            width: "480px",
+          },
+          {
+            id: "c1Pdf",
+            src: "/images/architects/pdf2.avif",
+            alt: "Salk Institute Plaza Water Channel Plan",
+            photoStyle: "blueprint",
+            width: "280px",
+          },
+          {
+            id: "c1Photo2",
+            src: "/images/architects/louis-sullivan-03.avif",
+            alt: "Teak Study Towers Over Plaza",
+            photoStyle: "vintage",
+            width: "360px",
+          },
+        ],
+      },
+      {
+        top: "1742px",
+        left: "64px",
+        width: "560px",
+        height: "400px",
+        card: {
+          id: "c2Note",
+          title: "KIMBELL ART MUSEUM (1969–1972)",
+          text: "Sixteen cycloid barrel vaults of silky poured concrete in Fort Worth, Texas. Narrow linear skylights illuminate silver concrete surfaces through curved aluminum light diffusers.",
+          cardStyle: "purple",
+          width: "560px",
+          minHeight: "400px",
+        },
+        photos: [
+          {
+            id: "c2Photo1",
+            src: "/images/architects/postcard.avif",
+            alt: "Kimbell Vaulted Portico Postcard",
+            photoStyle: "postcard",
+            width: "460px",
+          },
+          {
+            id: "c2Photo2",
+            src: "/images/architects/louis-sullivan-08.avif",
+            alt: "Cycloid Concrete Vault Light Slit",
+            photoStyle: "vintage",
+            width: "380px",
+          },
+          {
+            id: "c2Photo3",
+            src: "/images/architects/mary-colter-10.avif",
+            alt: "Gallery Reflecting Pool View",
+            photoStyle: "vintage",
+            width: "440px",
+          },
+        ],
+      },
+      {
+        top: "2746px",
+        left: "193px",
+        width: "560px",
+        height: "400px",
+        card: {
+          id: "c3Note",
+          title: "JATIYO SANGSAD BHABAN (1962–1982)",
+          text: "The National Parliament of Bangladesh rising like an ancient geometric fortress out of artificial lakes in Dhaka. Huge circular and triangular openings carve monumental voids of light into monolithic concrete.",
+          cardStyle: "yellow",
+          width: "560px",
+          minHeight: "400px",
+        },
+        photos: [
+          {
+            id: "c3Photo1",
+            src: "/images/architects/mary-colter-11.avif",
+            alt: "Dhaka Parliament Water Island View",
+            photoStyle: "vintage",
+            width: "480px",
+          },
+          {
+            id: "c3Photo2",
+            src: "/images/architects/hopi-house-drawing.avif",
+            alt: "Assembly Chamber Geometrical Elevation",
+            photoStyle: "blueprint",
+            width: "400px",
+          },
+          {
+            id: "c3Photo3",
+            src: "/images/architects/louis-sullivan-04.avif",
+            alt: "Circular Light Aperture Walkways",
+            photoStyle: "vintage",
+            width: "440px",
+          },
+        ],
+      },
+    ],
+  },
+
+  "i-m-pei": {
+    slug: "i-m-pei",
+    initialPositions: {
+      c1Photo1: { id: "c1Photo1", x: -320, y: -85, rotation: 0, zIndex: 10 },
+      c1Pdf: { id: "c1Pdf", x: -290, y: 125, rotation: 0, zIndex: 12 },
+      c1Note: { id: "c1Note", x: 0, y: 0, rotation: 0, zIndex: 14 },
+      c1Photo2: { id: "c1Photo2", x: 250, y: 160, rotation: 2, zIndex: 11 },
+      c2Photo1: { id: "c2Photo1", x: 190, y: -75, rotation: 0, zIndex: 10 },
+      c2Photo2: { id: "c2Photo2", x: 290, y: -415, rotation: 0, zIndex: 9 },
+      c2Note: { id: "c2Note", x: 0, y: 0, rotation: 0, zIndex: 14 },
+      c2Photo3: { id: "c2Photo3", x: 330, y: 75, rotation: 0, zIndex: 11 },
+      c3Photo1: { id: "c3Photo1", x: -140, y: -90, rotation: 0, zIndex: 10 },
+      c3Photo2: { id: "c3Photo2", x: -80, y: -350, rotation: 0, zIndex: 9 },
+      c3Note: { id: "c3Note", x: 0, y: 0, rotation: 0, zIndex: 14 },
+      c3Photo3: { id: "c3Photo3", x: 175, y: 185, rotation: 0, zIndex: 11 },
+    },
+    clusters: [
+      {
+        top: "615px",
+        left: "386px",
+        width: "560px",
+        height: "400px",
+        card: {
+          id: "c1Note",
+          title: "EAST BUILDING, NGA (1978)",
+          text: "Razor-sharp 19-degree marble knife-edge angles on the National Mall in Washington, D.C. Knife-edge Tennessee pink marble blocks joined with 1/8-inch neoprene gaskets under a soaring tetrahedron space frame.",
+          cardStyle: "teal",
+          width: "560px",
+          minHeight: "400px",
+        },
+        photos: [
+          {
+            id: "c1Photo1",
+            src: "/images/architects/i-m-pei.avif",
+            alt: "I. M. Pei Portrait",
+            photoStyle: "vintage",
+            width: "480px",
+          },
+          {
+            id: "c1Pdf",
+            src: "/images/architects/pdf2.avif",
+            alt: "Trapezoidal Mall Plan Layout",
+            photoStyle: "blueprint",
+            width: "280px",
+          },
+          {
+            id: "c1Photo2",
+            src: "/images/architects/louis-sullivan-01.avif",
+            alt: "Acute Knife-Edge Corner Detail",
+            photoStyle: "vintage",
+            width: "360px",
+          },
+        ],
+      },
+      {
+        top: "1742px",
+        left: "64px",
+        width: "560px",
+        height: "400px",
+        card: {
+          id: "c2Note",
+          title: "LOUVRE PYRAMID (1989)",
+          text: "A 71-foot crystalline glass pyramid in the historic Cour Napoléon in Paris. Fusing high-tensile stainless steel aerospace cable rigging with ultra-clear Saint-Gobain diamond glass.",
+          cardStyle: "yellow",
+          width: "560px",
+          minHeight: "400px",
+        },
+        photos: [
+          {
+            id: "c2Photo1",
+            src: "/images/architects/postcard.avif",
+            alt: "Grand Louvre Courtyard Postcard",
+            photoStyle: "postcard",
+            width: "460px",
+          },
+          {
+            id: "c2Photo2",
+            src: "/images/architects/louis-sullivan-07.avif",
+            alt: "Glass Pyramid and Classical Palace",
+            photoStyle: "vintage",
+            width: "380px",
+          },
+          {
+            id: "c2Photo3",
+            src: "/images/architects/mary-colter-12.avif",
+            alt: "Subterranean Welcome Concourse",
+            photoStyle: "vintage",
+            width: "440px",
+          },
+        ],
+      },
+      {
+        top: "2746px",
+        left: "193px",
+        width: "560px",
+        height: "400px",
+        card: {
+          id: "c3Note",
+          title: "BANK OF CHINA TOWER (1990)",
+          text: "A gleaming 72-story triangular prism dominating the Hong Kong skyline. Inspired by the segmented growth of bamboo shoots, triangular space truss corners resist powerful typhoon winds.",
+          cardStyle: "rose",
+          width: "560px",
+          minHeight: "400px",
+        },
+        photos: [
+          {
+            id: "c3Photo1",
+            src: "/images/architects/louis-sullivan-08.avif",
+            alt: "Bank of China Skyward Perspective",
+            photoStyle: "vintage",
+            width: "480px",
+          },
+          {
+            id: "c3Photo2",
+            src: "/images/architects/hopi-house-drawing.avif",
+            alt: "Diagonal Mega-Truss Structure Plan",
+            photoStyle: "blueprint",
+            width: "400px",
+          },
+          {
+            id: "c3Photo3",
+            src: "/images/architects/mary-colter-03.avif",
+            alt: "Geometric Curtain Wall Glazing",
+            photoStyle: "vintage",
+            width: "420px",
+          },
+        ],
+      },
+    ],
+  },
+
+  "paul-rudolph": {
+    slug: "paul-rudolph",
+    initialPositions: {
+      c1Photo1: { id: "c1Photo1", x: -330, y: -90, rotation: 0, zIndex: 10 },
+      c1Pdf: { id: "c1Pdf", x: -290, y: 120, rotation: 0, zIndex: 12 },
+      c1Note: { id: "c1Note", x: 0, y: 0, rotation: 0, zIndex: 14 },
+      c1Photo2: { id: "c1Photo2", x: 260, y: 155, rotation: 2.5, zIndex: 11 },
+      c2Photo1: { id: "c2Photo1", x: 185, y: -75, rotation: 0, zIndex: 10 },
+      c2Photo2: { id: "c2Photo2", x: 295, y: -430, rotation: 0, zIndex: 9 },
+      c2Note: { id: "c2Note", x: 0, y: 0, rotation: 0, zIndex: 14 },
+      c2Photo3: { id: "c2Photo3", x: 335, y: 70, rotation: 0, zIndex: 11 },
+      c3Photo1: { id: "c3Photo1", x: -145, y: -90, rotation: 0, zIndex: 10 },
+      c3Photo2: { id: "c3Photo2", x: -85, y: -360, rotation: 0, zIndex: 9 },
+      c3Note: { id: "c3Note", x: 0, y: 0, rotation: 0, zIndex: 14 },
+      c3Photo3: { id: "c3Photo3", x: 170, y: 190, rotation: 0, zIndex: 11 },
+    },
+    clusters: [
+      {
+        top: "615px",
+        left: "386px",
+        width: "560px",
+        height: "400px",
+        card: {
+          id: "c1Note",
+          title: "YALE ART & ARCHITECTURE (1963)",
+          text: "Hand-hammered ribbed corduroy concrete spanning 37 interlocking floor levels. Rudolph pushed Brutalism to its most intense spatial and textural theatricality in New Haven.",
+          cardStyle: "purple",
+          width: "560px",
+          minHeight: "400px",
+        },
+        photos: [
+          {
+            id: "c1Photo1",
+            src: "/images/architects/paul-rudolph.avif",
+            alt: "Paul Rudolph Portrait",
+            photoStyle: "vintage",
+            width: "480px",
+          },
+          {
+            id: "c1Pdf",
+            src: "/images/architects/pdf2.avif",
+            alt: "37-Level Section Isometric Blueprint",
+            photoStyle: "blueprint",
+            width: "280px",
+          },
+          {
+            id: "c1Photo2",
+            src: "/images/architects/louis-sullivan-04.avif",
+            alt: "Corduroy Ribbed Concrete Tower Corner",
+            photoStyle: "vintage",
+            width: "360px",
+          },
+        ],
+      },
+      {
+        top: "1742px",
+        left: "64px",
+        width: "560px",
+        height: "400px",
+        card: {
+          id: "c2Note",
+          title: "CARNEY LIBRARY (1966)",
+          text: "Heroic interlocking cantilevered concrete balconies and vast waffle-slab ceilings at UMass Dartmouth. A total utopian Brutalist campus built entirely of board-formed concrete.",
+          cardStyle: "teal",
+          width: "560px",
+          minHeight: "400px",
+        },
+        photos: [
+          {
+            id: "c2Photo1",
+            src: "/images/architects/postcard.avif",
+            alt: "UMass Dartmouth Campus Postcard",
+            photoStyle: "postcard",
+            width: "460px",
+          },
+          {
+            id: "c2Photo2",
+            src: "/images/architects/mary-colter-09.avif",
+            alt: "Interlocking Concrete Balconies",
+            photoStyle: "vintage",
+            width: "380px",
+          },
+          {
+            id: "c2Photo3",
+            src: "/images/architects/louis-sullivan-02.avif",
+            alt: "Waffle Slab Atrium Skylight",
+            photoStyle: "vintage",
+            width: "440px",
+          },
+        ],
+      },
+      {
+        top: "2746px",
+        left: "193px",
+        width: "560px",
+        height: "400px",
+        card: {
+          id: "c3Note",
+          title: "ORANGE COUNTY CENTER (1967)",
+          text: "A modular cubic labyrinth of 273 cantilevered concrete clerestory roof boxes in Goshen, New York. Rudolph broke apart the conventional government box into sculptural light wells.",
+          cardStyle: "yellow",
+          width: "560px",
+          minHeight: "400px",
+        },
+        photos: [
+          {
+            id: "c3Photo1",
+            src: "/images/architects/louis-sullivan-06.avif",
+            alt: "Modular Roof Boxes Exterior View",
+            photoStyle: "vintage",
+            width: "480px",
+          },
+          {
+            id: "c3Photo2",
+            src: "/images/architects/hopi-house-drawing.avif",
+            alt: "Concrete Box Clerestory Plan",
+            photoStyle: "blueprint",
+            width: "400px",
+          },
+          {
+            id: "c3Photo3",
+            src: "/images/architects/mary-colter-05.avif",
+            alt: "Deep Sunlit Concrete Courtyard",
+            photoStyle: "vintage",
+            width: "420px",
+          },
+        ],
+      },
+    ],
+  },
+
+  "mary-colter": {
+    slug: "mary-colter",
+    initialPositions: {
+      hopiPhoto: { id: "hopiPhoto", x: 90, y: -193, rotation: -2.75, zIndex: 11 },
+      hopiNote: { id: "hopiNote", x: 0, y: 0, rotation: 0, zIndex: 14 },
+      hopiPhoto2: { id: "hopiPhoto2", x: 256, y: -41, rotation: 1.5, zIndex: 12 },
+      hopiPostcard: { id: "hopiPostcard", x: 105, y: 225, rotation: 0, zIndex: 15 },
+      hopiPaperclip: { id: "hopiPaperclip", x: 420, y: 23, rotation: 180, zIndex: 16 },
+      watchtowerPanorama: { id: "watchtowerPanorama", x: -322, y: -80, rotation: 0, zIndex: 9 },
+      watchtowerPostcard: { id: "watchtowerPostcard", x: -327, y: 460, rotation: 0, zIndex: 13 },
+      watchtowerPhoto1: { id: "watchtowerPhoto1", x: -120, y: -209, rotation: 2.5, zIndex: 11 },
+      watchtowerPhoto2: { id: "watchtowerPhoto2", x: 205, y: -168, rotation: 0, zIndex: 12 },
+      watchtowerNote: { id: "watchtowerNote", x: 0, y: 0, rotation: 0, zIndex: 14 },
+      brightAngelBlueprint: { id: "brightAngelBlueprint", x: -470, y: -178, rotation: 0, zIndex: 8 },
+      brightAngelColor: { id: "brightAngelColor", x: -346, y: 144, rotation: 0, zIndex: 12 },
+      brightAngelLodge: { id: "brightAngelLodge", x: -328, y: -60, rotation: 0, zIndex: 10 },
+      brightAngelNote: { id: "brightAngelNote", x: 0, y: 0, rotation: 1.5, zIndex: 15 },
+      brightAngelPhoto: { id: "brightAngelPhoto", x: -286, y: -209, rotation: -1.75, zIndex: 11 },
+    },
+    clusters: [
+      {
+        top: "818px",
+        left: "63px",
+        width: "420px",
+        height: "450px",
+        hasPaperclip: true,
+        card: {
+          id: "hopiNote",
+          title: "HOPI HOUSE (1905)",
+          text: "Built directly across from the El Tovar Hotel on the Grand Canyon rim. Colter modeled the stone structure on the multi-story adobe and sandstone pueblo dwellings of the Hopi people at Oraibi.",
+          cardStyle: "rose",
+          width: "420px",
+          minHeight: "450px",
+        },
+        photos: [
+          {
+            id: "hopiPhoto",
+            src: "/images/architects/mary-colter-05.avif",
+            alt: "Hopi House Sandstone Masonry",
+            photoStyle: "vintage",
+            width: "504px",
+          },
+          {
+            id: "hopiPhoto2",
+            src: "/images/architects/mary-colter-06.avif",
+            alt: "Hopi House Terraced Roof Detail",
+            photoStyle: "vintage",
+            width: "380px",
+          },
+          {
+            id: "hopiPostcard",
+            src: "/images/architects/postcard.avif",
+            alt: "Fred Harvey Hopi House Postcard",
+            photoStyle: "postcard",
+            width: "440px",
+          },
+        ],
+      },
+      {
+        top: "1695px",
+        left: "372px",
+        width: "560px",
+        height: "400px",
+        card: {
+          id: "watchtowerNote",
+          title: "DESERT VIEW WATCHTOWER (1932)",
+          text: "A 70-foot stone tower perched on the canyon edge at Desert View. Colter designed an internal steel skeleton hidden beneath carefully selected unworked local fieldstones.",
+          cardStyle: "purple",
+          width: "560px",
+          minHeight: "400px",
+        },
+        photos: [
+          {
+            id: "watchtowerPanorama",
+            src: "/images/architects/mary-colter-07.avif",
+            alt: "Desert View Canyon Panorama",
+            photoStyle: "vintage",
+            width: "520px",
+          },
+          {
+            id: "watchtowerPhoto1",
+            src: "/images/architects/mary-colter-08.avif",
+            alt: "Stone Tower Base and Mortar",
+            photoStyle: "vintage",
+            width: "360px",
+          },
+          {
+            id: "watchtowerPhoto2",
+            src: "/images/architects/mary-colter-09.avif",
+            alt: "Hopi Murals by Fred Kabotie",
+            photoStyle: "vintage",
+            width: "440px",
+          },
+          {
+            id: "watchtowerPostcard",
+            src: "/images/architects/postcard.avif",
+            alt: "Watchtower Souvenir Postcard",
+            photoStyle: "postcard",
+            width: "420px",
+          },
+        ],
+      },
+      {
+        top: "2479px",
+        left: "596px",
+        width: "560px",
+        height: "400px",
+        card: {
+          id: "brightAngelNote",
+          title: "BRIGHT ANGEL LODGE (1935)",
+          text: "A masterwork of National Park Service rustic architecture. Colter built the monumental Geologic Fireplace using stones from every rock stratum of the Grand Canyon arranged in chronological sequence.",
+          cardStyle: "yellow",
+          width: "560px",
+          minHeight: "400px",
+        },
+        photos: [
+          {
+            id: "brightAngelBlueprint",
+            src: "/images/architects/hopi-house-drawing.avif",
+            alt: "Geologic Fireplace Elevation Drawing",
+            photoStyle: "blueprint",
+            width: "480px",
+          },
+          {
+            id: "brightAngelLodge",
+            src: "/images/architects/mary-colter-10.avif",
+            alt: "Hand-Hewn Pine Log Rafters",
+            photoStyle: "vintage",
+            width: "420px",
+          },
+          {
+            id: "brightAngelPhoto",
+            src: "/images/architects/mary-colter-11.avif",
+            alt: "Canyon Rim Cabin Encampment",
+            photoStyle: "vintage",
+            width: "440px",
+          },
+          {
+            id: "brightAngelColor",
+            src: "/images/architects/mary-colter-12.avif",
+            alt: "Rustic Interior Stone Hearth",
+            photoStyle: "vintage",
+            width: "380px",
+          },
+        ],
+      },
+    ],
+  },
+
+  "louis-sullivan": {
+    slug: "louis-sullivan",
+    initialPositions: {
+      wainwrightPhoto1: { id: "wainwrightPhoto1", x: -336, y: -92, rotation: 0, zIndex: 10 },
+      wainwrightPdf: { id: "wainwrightPdf", x: -300, y: 120, rotation: 0, zIndex: 12 },
+      wainwrightNote: { id: "wainwrightNote", x: 0, y: 0, rotation: 0, zIndex: 14 },
+      wainwrightPhoto2: { id: "wainwrightPhoto2", x: 258, y: 156, rotation: 2.5, zIndex: 11 },
+      guarantyPhoto1: { id: "guarantyPhoto1", x: 185, y: -75, rotation: 0, zIndex: 10 },
+      guarantyPhoto2: { id: "guarantyPhoto2", x: 297, y: -433, rotation: 0, zIndex: 9 },
+      guarantyNote: { id: "guarantyNote", x: 0, y: 0, rotation: 0, zIndex: 14 },
+      guarantyPhoto3: { id: "guarantyPhoto3", x: 336, y: 71, rotation: 0, zIndex: 11 },
+      bankPhoto1: { id: "bankPhoto1", x: -146, y: -92, rotation: 0, zIndex: 10 },
+      bankPhoto2: { id: "bankPhoto2", x: -84, y: -359, rotation: 0, zIndex: 9 },
+      bankNote: { id: "bankNote", x: 0, y: 0, rotation: 0, zIndex: 14 },
+      bankPhoto3: { id: "bankPhoto3", x: 168, y: 191, rotation: 0, zIndex: 11 },
+    },
+    clusters: [
+      {
+        top: "615px",
+        left: "386px",
+        width: "560px",
+        height: "400px",
+        card: {
+          id: "wainwrightNote",
+          title: "WAINWRIGHT BUILDING (1890–1891)",
+          text: "One of the first true skyscrapers. Vertical piers pull the eye upward, turning height into architectural argument rather than mere accumulation of floors.",
+          cardStyle: "teal",
+          width: "560px",
+          minHeight: "400px",
+        },
+        photos: [
+          {
+            id: "wainwrightPhoto1",
+            src: "/images/architects/louis-sullivan-08.avif",
+            alt: "Wainwright Building Exterior",
+            photoStyle: "vintage",
+            width: "504px",
+          },
+          {
+            id: "wainwrightPdf",
+            src: "/images/architects/pdf2.avif",
+            alt: "Wainwright Building Floorplan",
+            photoStyle: "blueprint",
+            width: "280px",
+          },
+          {
+            id: "wainwrightPhoto2",
+            src: "/images/architects/louis-sullivan-07.avif",
+            alt: "Terra Cotta Frieze Detail",
+            photoStyle: "vintage",
+            width: "360px",
+          },
+        ],
+      },
+      {
+        top: "1742px",
+        left: "64px",
+        width: "560px",
+        height: "400px",
+        card: {
+          id: "guarantyNote",
+          title: "GUARANTY BUILDING (1894–1896)",
+          text: "Sullivan's decorative triumph in Buffalo, New York. The entire steel structure is clad in finely molded terra-cotta with intricate botanical filigree.",
+          cardStyle: "rose",
+          width: "560px",
+          minHeight: "400px",
+        },
+        photos: [
+          {
+            id: "guarantyPhoto1",
+            src: "/images/architects/louis-sullivan-06.avif",
+            alt: "Guaranty Building Street Corner",
+            photoStyle: "vintage",
+            width: "480px",
+          },
+          {
+            id: "guarantyPhoto2",
+            src: "/images/architects/louis-sullivan-05.avif",
+            alt: "Terra Cotta Botanical Panels",
+            photoStyle: "vintage",
+            width: "380px",
+          },
+          {
+            id: "guarantyPhoto3",
+            src: "/images/architects/louis-sullivan-01.avif",
+            alt: "Cornice Bullseye Windows",
+            photoStyle: "vintage",
+            width: "440px",
+          },
+        ],
+      },
+      {
+        top: "2746px",
+        left: "193px",
+        width: "560px",
+        height: "400px",
+        card: {
+          id: "bankNote",
+          title: "NATIONAL FARMERS BANK (1908)",
+          text: "The first of Sullivan's beloved 'Jewel Boxes' in Owatonna, Minnesota. Red-tiled brick massing framed by monumental stained glass arched windows.",
+          cardStyle: "yellow",
+          width: "560px",
+          minHeight: "400px",
+        },
+        photos: [
+          {
+            id: "bankPhoto1",
+            src: "/images/architects/louis-sullivan-04.avif",
+            alt: "National Farmers Bank Arch Facade",
+            photoStyle: "vintage",
+            width: "480px",
+          },
+          {
+            id: "bankPhoto2",
+            src: "/images/architects/louis-sullivan-03.avif",
+            alt: "Corner Cast Bronze Ornament",
+            photoStyle: "vintage",
+            width: "400px",
+          },
+          {
+            id: "bankPhoto3",
+            src: "/images/architects/louis-sullivan-02.avif",
+            alt: "National Farmers Bank Interior Glass",
+            photoStyle: "vintage",
+            width: "440px",
+          },
+        ],
+      },
+    ],
+  },
+};

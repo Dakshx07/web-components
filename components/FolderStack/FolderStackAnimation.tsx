@@ -242,6 +242,7 @@ export const FolderStackAnimation: React.FC = () => {
   const [activeGroupIndex, setActiveGroupIndex] = useState<number>(3); // Default to Group 4 (Contextual: Mary Colter & Louis Sullivan)
   const [activeCaseIndex, setActiveCaseIndex] = useState<number>(0); // Default to Mary Colter
   const [folderStartDelta, setFolderStartDelta] = useState<number>(420);
+  const [folderStartWidth, setFolderStartWidth] = useState<number>(0);
 
   // Refs for GSAP choreography
   const stackRef = useRef<HTMLDivElement>(null);
@@ -253,6 +254,7 @@ export const FolderStackAnimation: React.FC = () => {
   const caseFolderRef = useRef<HTMLDivElement | null>(null);
   const caseCoverRef = useRef<HTMLDivElement | null>(null);
   const caseTagsRef = useRef<HTMLDivElement | null>(null);
+  const caseTopTabsRef = useRef<HTMLDivElement | null>(null);
   const caseScrapbookRef = useRef<HTMLDivElement | null>(null);
   const caseHeroTitleRef = useRef<HTMLHeadingElement | null>(null);
 
@@ -342,15 +344,18 @@ export const FolderStackAnimation: React.FC = () => {
 
     soundFx.playFolderFlap();
 
-    // Measure deltaY from clicked folder in stack to reader dock top (216px)
+    // Measure deltaY and width from clicked folder in stack to reader dock top (216px)
     const clickedEl = groupRefs.current.get(groupIndex);
     let deltaY = 420;
+    let startWidth = 0;
     if (clickedEl) {
       const rect = clickedEl.getBoundingClientRect();
       deltaY = Math.max(80, Math.round(rect.top - 216));
+      startWidth = Math.round(rect.width);
     }
 
     setFolderStartDelta(deltaY);
+    setFolderStartWidth(startWidth);
     setActiveGroupIndex(groupIndex);
     setActiveCaseIndex(caseIndex);
     setUnfoldedGroupId(groupIndex);
@@ -361,12 +366,19 @@ export const FolderStackAnimation: React.FC = () => {
   useEffect(() => {
     if (phase !== "unfolding") return;
 
+    if (typeof window !== "undefined" && window.__lenis) {
+      window.__lenis.stop();
+    }
     window.scrollTo({ top: 0, behavior: "instant" });
 
     const tlEnter = gsap.timeline({
       defaults: { ease: "power3.inOut", duration: 1.5 },
       onComplete: () => {
         setPhase("case-view");
+        if (typeof window !== "undefined" && window.__lenis) {
+          window.__lenis.resize();
+          window.__lenis.start();
+        }
       },
     });
 
@@ -391,12 +403,23 @@ export const FolderStackAnimation: React.FC = () => {
       tlEnter.to(heroTitleRef.current, { y: "2rem", opacity: 0, duration: 0.45, stagger: -0.05 }, 0.15);
     }
 
-    // 3. Reader: Folder container glides from slot deltaY up to 0
+    // 3. Reader: Folder container glides from slot deltaY up to 0 and adapts width
     if (caseFolderRef.current) {
       tlEnter.fromTo(
         caseFolderRef.current,
-        { y: folderStartDelta, x: 0, transformOrigin: "right bottom" },
-        { y: 0, x: 0, duration: 1.5, ease: "power3.inOut" },
+        {
+          y: folderStartDelta,
+          x: 0,
+          ...(folderStartWidth ? { width: folderStartWidth } : {}),
+          transformOrigin: "right bottom",
+        },
+        {
+          y: 0,
+          x: 0,
+          clearProps: "width",
+          duration: 1.5,
+          ease: "power3.inOut",
+        },
         0
       );
 
@@ -483,18 +506,18 @@ export const FolderStackAnimation: React.FC = () => {
     return () => {
       tlEnter.kill();
     };
-  }, [phase, folderStartDelta, activeGroupIndex]);
+  }, [phase, folderStartDelta, folderStartWidth, activeGroupIndex]);
 
   // Close Folder handler: drops scrapbook items and enters closing-to-stack phase
   const handleCloseToStack = () => {
     if (phase !== "case-view") return;
     soundFx.playFolderFlap();
 
-    // Smoothly glide viewport back to scrollY = 0 in lockstep with the 1.5s flight (Mosby Rct)
+    // Instant reset of scroll position to top to guarantee rock-solid coordinate alignment
     if (typeof window !== "undefined" && window.__lenis) {
-      window.__lenis.scrollTo(0, { duration: 1.5, lock: true, force: true });
+      window.__lenis.scrollTo(0, { immediate: true, force: true, lock: true });
     } else {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 0, behavior: "instant" });
     }
 
     const items = caseScrapbookRef.current
@@ -527,12 +550,11 @@ export const FolderStackAnimation: React.FC = () => {
 
     let targetDeltaY = folderStartDelta;
     let targetDeltaX = 0;
-    let targetWidth: number | string = "100%";
+    const targetWidth = targetRect ? Math.round(targetRect.width) : undefined;
 
     if (targetRect && folderRect) {
       targetDeltaY = Math.round(targetRect.top - folderRect.top);
       targetDeltaX = Math.round(targetRect.left - folderRect.left);
-      targetWidth = Math.round(targetRect.width);
     }
 
     const allGroups = Array.from(groupRefs.current.entries());
@@ -542,97 +564,117 @@ export const FolderStackAnimation: React.FC = () => {
       .filter(Boolean);
 
     // Initial setup: sibling folders and hero text remain dropped/hidden during flight
-    gsap.set(siblings, { yPercent: 120 });
-    if (heroTitleRef.current) gsap.set(heroTitleRef.current, { y: "2rem", opacity: 0 });
-    if (heroDescRef.current) gsap.set(heroDescRef.current, { y: "2rem", opacity: 0 });
+    gsap.set(siblings, { yPercent: 120, transition: "none" });
+    if (targetEl) gsap.set(targetEl, { transition: "none" });
+    if (heroTitleRef.current) gsap.set(heroTitleRef.current, { y: "1.5rem", opacity: 0 });
+    if (heroDescRef.current) gsap.set(heroDescRef.current, { y: "1.5rem", opacity: 0 });
 
     const tlClose = gsap.timeline({
-      defaults: { ease: "power3.inOut", duration: 1.5 },
+      defaults: { ease: "power3.inOut" },
       onComplete: () => {
-        // 1. Active closing folder has docked seamlessly into its slot
+        // 1. Active closing folder has docked seamlessly into its slot (preserve transform until unmount)
         setPhase("stack");
-        if (caseFolderRef.current) {
-          gsap.set(caseFolderRef.current, { clearProps: "all" });
-        }
 
-        // 2. ONLY NOW: The rest of the stack folders slide up from below as desired (Mosby zct)
+        // 2. ONLY NOW: Text appears with a graceful breath, then the rest of the folders appear (Mosby zct)
         const tlRestore = gsap.timeline({
-          defaults: { duration: 0.85, ease: "power4.out" },
+          defaults: { ease: "power3.out" },
+          onComplete: () => {
+            if (typeof window !== "undefined" && window.__lenis) {
+              window.__lenis.resize();
+            }
+            // Re-enable CSS transitions on stack groups after restoration completes
+            const allElements = allGroups.map(([, el]) => el).filter(Boolean);
+            gsap.set(allElements, { clearProps: "transition" });
+          },
         });
 
-        tlRestore.fromTo(
-          siblings,
-          { yPercent: 120 },
-          { yPercent: 0, duration: 0.85, stagger: 0.1, ease: "power4.out", clearProps: "yPercent" },
-          0
-        );
-
+        // "and then the text appears..." with a gentle 0.18s pause so the landed folder settles firmly
         if (heroTitleRef.current) {
           tlRestore.fromTo(
             heroTitleRef.current,
-            { y: "2rem", opacity: 0 },
-            { y: 0, opacity: 1, duration: 0.85, stagger: 0.15, ease: "power4.out" },
-            0
+            { y: "1.5rem", opacity: 0 },
+            { y: 0, opacity: 1, duration: 0.75, ease: "power3.out" },
+            0.18
           );
         }
         if (heroDescRef.current) {
           tlRestore.fromTo(
             heroDescRef.current,
-            { y: "2rem", opacity: 0 },
+            { y: "1.5rem", opacity: 0 },
             { y: 0, opacity: 1, duration: 0.65, ease: "power2.out" },
-            0.25
+            0.32
           );
         }
+
+        // "...then the rest of the folder appears" (Mosby timing)
+        tlRestore.fromTo(
+          siblings,
+          { yPercent: 120 },
+          { yPercent: 0, duration: 0.85, stagger: 0.08, ease: "power4.out", clearProps: "yPercent" },
+          0.45
+        );
       },
     });
 
     // 1. Case hero title chars exit left
     if (caseHeroTitleRef.current) {
       const chars = caseHeroTitleRef.current.querySelectorAll(".case-char");
-      tlClose.to(chars, { xPercent: -150, opacity: 0, duration: 0.8, stagger: 0.02, ease: "power2.in" }, 0);
+      tlClose.to(chars, { xPercent: -150, opacity: 0, duration: 0.5, stagger: 0.012, ease: "power2.in" }, 0);
     }
 
-    // 2. Spine tags slide down
+    // 2. Spine tags slide down into spine
     if (caseTagsRef.current) {
-      tlClose.to(caseTagsRef.current.children, { yPercent: 110, duration: 0.65, ease: "power3.in" }, 0);
+      tlClose.to(caseTagsRef.current.children, { yPercent: 110, duration: 0.45, ease: "power3.in" }, 0);
     }
 
-    // 3. 3D Flap Cover folds shut from -180 back to 0
+    // 3. Top horizontal tabs slide/fade in smoothly to take over
+    if (caseTopTabsRef.current) {
+      tlClose.fromTo(
+        caseTopTabsRef.current,
+        { y: 20, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.4, ease: "power2.out" },
+        0.1
+      );
+    }
+
+    // 4. 3D Flap Cover folds shut from -180 back to 0
     if (caseCoverRef.current) {
       const shadow = caseCoverRef.current.querySelector(`.${styles.caseFolderCoverShadow}`);
-      tlClose.to(caseCoverRef.current, { rotateY: 0, duration: 1.5, ease: "power3.inOut" }, 0);
+      tlClose.to(caseCoverRef.current, { rotateY: 0, duration: 1.15, ease: "power3.inOut" }, 0);
       if (shadow) {
-        tlClose.to(shadow, { opacity: 1, duration: 0.4 }, 0.5);
-        tlClose.to(shadow, { opacity: 0, duration: 0.3 }, 0.9);
+        tlClose.to(shadow, { opacity: 1, duration: 0.35 }, 0.3);
+        tlClose.to(shadow, { opacity: 0, duration: 0.3 }, 0.75);
       }
     }
 
-    // 4. Folder glides down to its exact slot in stack (targetDeltaX, targetDeltaY, targetWidth)
+    // 5. Folder glides smoothly into the air to -20deg, glides to slot position, and eases flat into the stack
     if (caseFolderRef.current) {
+      // Continuous smooth translation and width adaptation to the exact stack slot
       tlClose.to(
         caseFolderRef.current,
         {
           y: targetDeltaY,
           x: targetDeltaX,
-          width: targetWidth,
-          duration: 1.5,
+          ...(targetWidth ? { width: targetWidth } : {}),
+          duration: 1.35,
           ease: "power3.inOut",
           transformOrigin: "right bottom",
         },
         0
       );
 
-      // Symmetrical flight arc: tilts smoothly into the air to -22.6deg, then eases smoothly back to 0deg
-      // KEEPING transformOrigin: "right bottom" throughout the flight (NO mid-flight clearProps snap!)
+      // Phase A: Tilts into the air
       tlClose.to(
         caseFolderRef.current,
-        { rotate: -22.6, duration: 0.6, ease: "sine.inOut" },
+        { rotate: -20, duration: 0.55, ease: "power2.out" },
         0
       );
+
+      // Phase B: Seamlessly levels out into the stack slot without halting at angle
       tlClose.to(
         caseFolderRef.current,
-        { rotate: 0, duration: 0.9, ease: "sine.inOut" },
-        0.6
+        { rotate: 0, duration: 0.8, ease: "power2.inOut" },
+        0.55
       );
     }
 
@@ -980,10 +1022,13 @@ export const FolderStackAnimation: React.FC = () => {
           folderRef={caseFolderRef}
           coverRef={caseCoverRef}
           tagsRef={caseTagsRef}
+          topTabsRef={caseTopTabsRef}
           scrapbookRef={caseScrapbookRef}
           heroTitleRef={caseHeroTitleRef}
           initialUnfolded={phase === "case-view" || phase === "closing-to-stack"}
           folderStartDelta={folderStartDelta}
+          folderStartWidth={folderStartWidth}
+          isClosingToStack={phase === "closing-to-stack"}
         />
       )}
     </div>

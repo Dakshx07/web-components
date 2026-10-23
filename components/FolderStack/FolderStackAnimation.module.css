@@ -12,16 +12,57 @@
   --color-dark: #191919;
   --stack-rotation-angle: -3deg;
   --container-offset: 34px;
+  --container-size: calc(100vw - var(--container-offset) * 2);
+  --case-content-width: calc((var(--container-size) - 19 * 1rem) * 16 / 20 + 15rem);
   --stack-group-offset: 3.75rem;
   --tag-height: 2.75rem;
   --tag-aspect-ratio: 1.409;
   --stack-shadow: 0 -1px 8px rgba(0, 0, 0, 0.15);
   --stack-perspective: 3000px;
   --color-primary: #191919;
-  --case-content-width: calc((calc(100vw - 34px * 2) - 19 * 1rem) * 16 / 20 + 15rem);
-  --container-size: calc(100vw - 34px * 2);
   --stack-border-radius: 4px;
   --folder-shadow: 1px 0 8px rgba(0, 0, 0, 0.15);
+}
+
+@media only screen and (min-width: 1025px) {
+  :root {
+    --container-offset: 32px;
+    --case-content-width: calc((var(--container-size) - 19 * 1rem) * 16 / 20 + 15rem);
+  }
+}
+
+@media only screen and (min-width: 1440px) {
+  :root {
+    --container-offset: 34px;
+  }
+}
+
+@media only screen and (min-width: 1920px) {
+  :root {
+    --container-offset: 48px;
+  }
+}
+
+@media only screen and (max-width: 1024px) {
+  :root {
+    --container-offset: 30px;
+    --stack-group-height-sm: 20vh;
+    --case-content-width: calc(var(--container-size) - var(--tag-height));
+  }
+}
+
+@media only screen and (max-width: 768px) {
+  :root {
+    --container-offset: 20px;
+    --tag-height: 2.25rem;
+  }
+}
+
+@media only screen and (max-width: 480px) {
+  :root {
+    --container-offset: 18px;
+    --stack-group-height-sm: 15vh;
+  }
 }
 
 /* ── Page Container ── */
@@ -154,12 +195,11 @@
 
 .homeSceneTransitioning {
   position: fixed !important;
-  inset: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
   display: flex !important;
   flex-direction: column !important;
-  justify-content: space-between !important;
   pointer-events: none !important;
   z-index: 1 !important;
 }
@@ -681,7 +721,36 @@
 
 .caseFolderCoverBack {
   background-color: var(--case-color, #d6231b);
-  transform: rotateY(180deg);
+  transform: rotateX(180deg);
+  overflow: hidden;
+}
+
+.caseFolderCoverBackOverlay {
+  background: linear-gradient(90deg, #fff0, rgba(255, 255, 255, 0.05));
+  height: 100%;
+  inset: 0;
+  opacity: 1;
+  position: absolute;
+  width: 100%;
+  pointer-events: none;
+}
+
+.caseFolderCoverFrontOverlay {
+  background: linear-gradient(0deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05));
+  height: 100%;
+  inset: 0;
+  position: absolute;
+  width: 100%;
+  pointer-events: none;
+}
+
+.caseFolderCoverFrontShadow {
+  box-shadow: var(--folder-shadow);
+  height: 100%;
+  inset: 0;
+  position: absolute;
+  width: 100%;
+  pointer-events: none;
 }
 
 .caseFolderCoverShadow {

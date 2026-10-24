@@ -1,0 +1,389 @@
+/* ── Notion-Style Block Editor Styles ── */
+
+.editorContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  position: relative;
+  min-height: 480px;
+  color: #1a1a1a;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.blockList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 90px; /* Leave space above the sawtooth pocket */
+}
+
+/* Individual Block Row */
+.blockRow {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  group: true;
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+}
+
+.blockRow:hover .blockGutter {
+  opacity: 1;
+}
+
+/* Block Gutter (Add / Handle buttons) */
+.blockGutter {
+  position: absolute;
+  left: -32px;
+  top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  user-select: none;
+}
+
+.gutterBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #999;
+  font-size: 13px;
+  width: 18px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.gutterBtn:hover {
+  color: #1a1a1a;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Block Content Wrapper */
+.blockContent {
+  width: 100%;
+  position: relative;
+}
+
+/* Textarea / Input styles */
+.blockInput {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  resize: none;
+  padding: 2px 0;
+  margin: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.blockInput::placeholder {
+  color: #bbb;
+  font-style: italic;
+}
+
+/* Heading Sizes */
+.h1Input {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  margin-top: 14px;
+  margin-bottom: 2px;
+  color: #111;
+}
+
+.h2Input {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.015em;
+  margin-top: 12px;
+  margin-bottom: 2px;
+  color: #222;
+}
+
+.h3Input {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-top: 8px;
+  margin-bottom: 2px;
+  color: #333;
+}
+
+/* Todo / Checkbox Item */
+.todoWrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+}
+
+.todoCheckbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid #777;
+  border-radius: 3px;
+  margin-top: 4px;
+  cursor: pointer;
+  display: grid;
+  place-content: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  background: #fff;
+}
+
+.todoCheckbox:checked {
+  background-color: #2e66f6;
+  border-color: #2e66f6;
+}
+
+.todoCheckbox:checked::before {
+  content: "";
+  width: 8px;
+  height: 4px;
+  border-left: 1.8px solid #fff;
+  border-bottom: 1.8px solid #fff;
+  transform: rotate(-45deg) translate(0.5px, -1px);
+}
+
+.todoInputCompleted {
+  text-decoration: line-through;
+  color: #888;
+}
+
+/* Bullet Item */
+.bulletWrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+}
+
+.bulletDot {
+  font-size: 16px;
+  line-height: 1.5;
+  color: #555;
+  user-select: none;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Divider Item */
+.dividerWrapper {
+  width: 100%;
+  padding: 10px 0;
+  cursor: pointer;
+}
+
+.dividerLine {
+  width: 100%;
+  height: 1px;
+  background-color: rgba(0, 0, 0, 0.12);
+}
+
+/* Image Block */
+.imageWrapper {
+  width: 100%;
+  margin: 10px 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fbfbfa;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.imagePreview {
+  width: 100%;
+  max-height: 380px;
+  object-fit: cover;
+  display: block;
+}
+
+.imageCaptionInput {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: #666;
+  font-style: italic;
+  text-align: center;
+}
+
+.imagePlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 28px 16px;
+  color: #777;
+  cursor: pointer;
+}
+
+.imagePlaceholder input[type="file"] {
+  display: none;
+}
+
+.imageUploadBtn {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: #eee;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+
+/* Video Block */
+.videoWrapper {
+  width: 100%;
+  margin: 10px 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #000;
+  aspect-ratio: 16 / 9;
+}
+
+.videoIframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.videoUrlInput {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  margin-top: 6px;
+}
+
+/* Slash Menu Styles */
+.slashMenu {
+  position: absolute;
+  z-index: 1000;
+  width: 280px;
+  max-height: 320px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.08);
+  overflow-y: auto;
+  padding: 6px;
+  animation: slashMenuIn 0.15s ease-out;
+}
+
+@keyframes slashMenuIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.slashMenuHeader {
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #888;
+  padding: 6px 8px 4px;
+}
+
+.slashMenuList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.slashMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 5px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: background-color 0.1s;
+}
+
+.slashMenuItem:hover,
+.slashMenuItemActive {
+  background-color: #f1f1ef;
+}
+
+.slashMenuIcon {
+  width: 26px;
+  height: 26px;
+  background: #f7f7f5;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  flex-shrink: 0;
+}
+
+.slashMenuText {
+  display: flex;
+  flex-direction: column;
+}
+
+.slashMenuTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: #222;
+}
+
+.slashMenuDesc {
+  font-size: 11px;
+  color: #777;
+}
+
+/* Quick add empty block row button */
+.addBlockBtn {
+  margin-top: 10px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: #777;
+  background: transparent;
+  border: 1px dashed rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  transition: all 0.15s ease;
+}
+
+.addBlockBtn:hover {
+  background: rgba(0, 0, 0, 0.03);
+  color: #222;
+  border-color: rgba(0, 0, 0, 0.3);
+}

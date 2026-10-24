@@ -1,0 +1,284 @@
+[
+  {
+    "index": 0,
+    "file": "frame_hover_002.png",
+    "url": "/reference_frames/frame_hover_002.png",
+    "category": "hover"
+  },
+  {
+    "index": 1,
+    "file": "frame_idle_001.png",
+    "url": "/reference_frames/frame_idle_001.png",
+    "category": "idle"
+  },
+  {
+    "index": 2,
+    "file": "frame_scroll_038.png",
+    "url": "/reference_frames/frame_scroll_038.png",
+    "category": "scroll"
+  },
+  {
+    "index": 3,
+    "file": "frame_scroll_039.png",
+    "url": "/reference_frames/frame_scroll_039.png",
+    "category": "scroll"
+  },
+  {
+    "index": 4,
+    "file": "frame_scroll_040.png",
+    "url": "/reference_frames/frame_scroll_040.png",
+    "category": "scroll"
+  },
+  {
+    "index": 5,
+    "file": "frame_scroll_041.png",
+    "url": "/reference_frames/frame_scroll_041.png",
+    "category": "scroll"
+  },
+  {
+    "index": 6,
+    "file": "frame_scroll_042.png",
+    "url": "/reference_frames/frame_scroll_042.png",
+    "category": "scroll"
+  },
+  {
+    "index": 7,
+    "file": "frame_scroll_043.png",
+    "url": "/reference_frames/frame_scroll_043.png",
+    "category": "scroll"
+  },
+  {
+    "index": 8,
+    "file": "frame_scroll_044.png",
+    "url": "/reference_frames/frame_scroll_044.png",
+    "category": "scroll"
+  },
+  {
+    "index": 9,
+    "file": "frame_scroll_045.png",
+    "url": "/reference_frames/frame_scroll_045.png",
+    "category": "scroll"
+  },
+  {
+    "index": 10,
+    "file": "frame_scroll_046.png",
+    "url": "/reference_frames/frame_scroll_046.png",
+    "category": "scroll"
+  },
+  {
+    "index": 11,
+    "file": "frame_scroll_047.png",
+    "url": "/reference_frames/frame_scroll_047.png",
+    "category": "scroll"
+  },
+  {
+    "index": 12,
+    "file": "frame_unfold_003.png",
+    "url": "/reference_frames/frame_unfold_003.png",
+    "category": "unfold"
+  },
+  {
+    "index": 13,
+    "file": "frame_unfold_004.png",
+    "url": "/reference_frames/frame_unfold_004.png",
+    "category": "unfold"
+  },
+  {
+    "index": 14,
+    "file": "frame_unfold_005.png",
+    "url": "/reference_frames/frame_unfold_005.png",
+    "category": "unfold"
+  },
+  {
+    "index": 15,
+    "file": "frame_unfold_006.png",
+    "url": "/reference_frames/frame_unfold_006.png",
+    "category": "unfold"
+  },
+  {
+    "index": 16,
+    "file": "frame_unfold_007.png",
+    "url": "/reference_frames/frame_unfold_007.png",
+    "category": "unfold"
+  },
+  {
+    "index": 17,
+    "file": "frame_unfold_008.png",
+    "url": "/reference_frames/frame_unfold_008.png",
+    "category": "unfold"
+  },
+  {
+    "index": 18,
+    "file": "frame_unfold_009.png",
+    "url": "/reference_frames/frame_unfold_009.png",
+    "category": "unfold"
+  },
+  {
+    "index": 19,
+    "file": "frame_unfold_010.png",
+    "url": "/reference_frames/frame_unfold_010.png",
+    "category": "unfold"
+  },
+  {
+    "index": 20,
+    "file": "frame_unfold_011.png",
+    "url": "/reference_frames/frame_unfold_011.png",
+    "category": "unfold"
+  },
+  {
+    "index": 21,
+    "file": "frame_unfold_012.png",
+    "url": "/reference_frames/frame_unfold_012.png",
+    "category": "unfold"
+  },
+  {
+    "index": 22,
+    "file": "frame_unfold_013.png",
+    "url": "/reference_frames/frame_unfold_013.png",
+    "category": "unfold"
+  },
+  {
+    "index": 23,
+    "file": "frame_unfold_014.png",
+    "url": "/reference_frames/frame_unfold_014.png",
+    "category": "unfold"
+  },
+  {
+    "index": 24,
+    "file": "frame_unfold_015.png",
+    "url": "/reference_frames/frame_unfold_015.png",
+    "category": "unfold"
+  },
+  {
+    "index": 25,
+    "file": "frame_unfold_016.png",
+    "url": "/reference_frames/frame_unfold_016.png",
+    "category": "unfold"
+  },
+  {
+    "index": 26,
+    "file": "frame_unfold_017.png",
+    "url": "/reference_frames/frame_unfold_017.png",
+    "category": "unfold"
+  },
+  {
+    "index": 27,
+    "file": "frame_unfold_018.png",
+    "url": "/reference_frames/frame_unfold_018.png",
+    "category": "unfold"
+  },
+  {
+    "index": 28,
+    "file": "frame_unfold_019.png",
+    "url": "/reference_frames/frame_unfold_019.png",
+    "category": "unfold"
+  },
+  {
+    "index": 29,
+    "file": "frame_unfold_020.png",
+    "url": "/reference_frames/frame_unfold_020.png",
+    "category": "unfold"
+  },
+  {
+    "index": 30,
+    "file": "frame_unfold_021.png",
+    "url": "/reference_frames/frame_unfold_021.png",
+    "category": "unfold"
+  },
+  {
+    "index": 31,
+    "file": "frame_unfold_022.png",
+    "url": "/reference_frames/frame_unfold_022.png",
+    "category": "unfold"
+  },
+  {
+    "index": 32,
+    "file": "frame_unfold_023.png",
+    "url": "/reference_frames/frame_unfold_023.png",
+    "category": "unfold"
+  },
+  {
+    "index": 33,
+    "file": "frame_unfold_024.png",
+    "url": "/reference_frames/frame_unfold_024.png",
+    "category": "unfold"
+  },
+  {
+    "index": 34,
+    "file": "frame_unfold_025.png",
+    "url": "/reference_frames/frame_unfold_025.png",
+    "category": "unfold"
+  },
+  {
+    "index": 35,
+    "file": "frame_unfold_026.png",
+    "url": "/reference_frames/frame_unfold_026.png",
+    "category": "unfold"
+  },
+  {
+    "index": 36,
+    "file": "frame_unfold_027.png",
+    "url": "/reference_frames/frame_unfold_027.png",
+    "category": "unfold"
+  },
+  {
+    "index": 37,
+    "file": "frame_unfold_028.png",
+    "url": "/reference_frames/frame_unfold_028.png",
+    "category": "unfold"
+  },
+  {
+    "index": 38,
+    "file": "frame_unfold_029.png",
+    "url": "/reference_frames/frame_unfold_029.png",
+    "category": "unfold"
+  },
+  {
+    "index": 39,
+    "file": "frame_unfold_030.png",
+    "url": "/reference_frames/frame_unfold_030.png",
+    "category": "unfold"
+  },
+  {
+    "index": 40,
+    "file": "frame_unfold_031.png",
+    "url": "/reference_frames/frame_unfold_031.png",
+    "category": "unfold"
+  },
+  {
+    "index": 41,
+    "file": "frame_unfold_032.png",
+    "url": "/reference_frames/frame_unfold_032.png",
+    "category": "unfold"
+  },
+  {
+    "index": 42,
+    "file": "frame_unfold_033.png",
+    "url": "/reference_frames/frame_unfold_033.png",
+    "category": "unfold"
+  },
+  {
+    "index": 43,
+    "file": "frame_unfold_034.png",
+    "url": "/reference_frames/frame_unfold_034.png",
+    "category": "unfold"
+  },
+  {
+    "index": 44,
+    "file": "frame_unfold_035.png",
+    "url": "/reference_frames/frame_unfold_035.png",
+    "category": "unfold"
+  },
+  {
+    "index": 45,
+    "file": "frame_unfold_036.png",
+    "url": "/reference_frames/frame_unfold_036.png",
+    "category": "unfold"
+  },
+  {
+    "index": 46,
+    "file": "frame_unfold_037.png",
+    "url": "/reference_frames/frame_unfold_037.png",
+    "category": "unfold"
+  }
+]

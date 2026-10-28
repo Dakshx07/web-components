@@ -242,6 +242,7 @@ export const FolderStackAnimation: React.FC = () => {
   const [activeGroupIndex, setActiveGroupIndex] = useState<number>(3); // Default to Group 4 (Contextual: Mary Colter & Louis Sullivan)
   const [activeCaseIndex, setActiveCaseIndex] = useState<number>(0); // Default to Mary Colter
   const [folderStartDelta, setFolderStartDelta] = useState<number>(420);
+  const [folderStartX, setFolderStartX] = useState<number>(0);
   const [folderStartWidth, setFolderStartWidth] = useState<number>(0);
 
   // Refs for GSAP choreography
@@ -347,14 +348,22 @@ export const FolderStackAnimation: React.FC = () => {
     // Measure deltaY and width from clicked folder in stack to reader dock top (216px)
     const clickedEl = groupRefs.current.get(groupIndex);
     let deltaY = 420;
+    let deltaX = 0;
     let startWidth = 0;
     if (clickedEl) {
       const rect = clickedEl.getBoundingClientRect();
       deltaY = Math.max(80, Math.round(rect.top - 216));
       startWidth = Math.round(rect.width);
+
+      const targetSpreadWidth = Math.min(window.innerWidth * 0.92, 1340);
+      const targetFlapWidth = Math.round(targetSpreadWidth / 2);
+      const spreadRight = Math.round((window.innerWidth / 2) + targetFlapWidth);
+      const naturalLeftAtStart = spreadRight - startWidth;
+      deltaX = Math.round(rect.left - naturalLeftAtStart);
     }
 
     setFolderStartDelta(deltaY);
+    setFolderStartX(deltaX);
     setFolderStartWidth(startWidth);
     setActiveGroupIndex(groupIndex);
     setActiveCaseIndex(caseIndex);
@@ -405,20 +414,28 @@ export const FolderStackAnimation: React.FC = () => {
 
     // 3. Reader: Folder container glides from slot deltaY up to 0 and adapts width
     if (caseFolderRef.current) {
+      const targetSpreadWidth = Math.min(window.innerWidth * 0.92, 1340);
+      const targetFlapWidth = Math.round(targetSpreadWidth / 2);
+
       tlEnter.fromTo(
         caseFolderRef.current,
         {
           y: folderStartDelta,
-          x: 0,
+          x: folderStartX,
           ...(folderStartWidth ? { width: folderStartWidth } : {}),
           transformOrigin: "right bottom",
         },
         {
           y: 0,
           x: 0,
-          clearProps: "width",
+          width: targetFlapWidth,
           duration: 1.5,
           ease: "power3.inOut",
+          onComplete: () => {
+            if (caseFolderRef.current) {
+              caseFolderRef.current.style.width = "50%";
+            }
+          },
         },
         0
       );
@@ -506,7 +523,7 @@ export const FolderStackAnimation: React.FC = () => {
     return () => {
       tlEnter.kill();
     };
-  }, [phase, folderStartDelta, folderStartWidth, activeGroupIndex]);
+  }, [phase, folderStartDelta, folderStartX, folderStartWidth, activeGroupIndex]);
 
   // Close Folder handler: drops scrapbook items and enters closing-to-stack phase
   const handleCloseToStack = () => {
@@ -552,9 +569,13 @@ export const FolderStackAnimation: React.FC = () => {
     let targetDeltaX = 0;
     const targetWidth = targetRect ? Math.round(targetRect.width) : undefined;
 
-    if (targetRect && folderRect) {
+    if (targetRect && folderRect && targetWidth) {
       targetDeltaY = Math.round(targetRect.top - folderRect.top);
-      targetDeltaX = Math.round(targetRect.left - folderRect.left);
+      // Because caseFolder is inside .caseSpread (justify-content: flex-end),
+      // as width expands to targetWidth, its un-translated left edge sits at:
+      // naturalLeftAtLanding = folderRect.right - targetWidth
+      const naturalLeftAtLanding = folderRect.right - targetWidth;
+      targetDeltaX = Math.round(targetRect.left - naturalLeftAtLanding);
     }
 
     const allGroups = Array.from(groupRefs.current.entries());
@@ -649,16 +670,23 @@ export const FolderStackAnimation: React.FC = () => {
 
     // 5. Folder glides smoothly into the air to -20deg, glides to slot position, and eases flat into the stack
     if (caseFolderRef.current) {
+      const currentFlapWidth = Math.round(caseFolderRef.current.offsetWidth);
+
       // Continuous smooth translation and width adaptation to the exact stack slot
-      tlClose.to(
+      tlClose.fromTo(
         caseFolderRef.current,
+        {
+          y: 0,
+          x: 0,
+          width: currentFlapWidth,
+          transformOrigin: "right bottom",
+        },
         {
           y: targetDeltaY,
           x: targetDeltaX,
           ...(targetWidth ? { width: targetWidth } : {}),
           duration: 1.35,
           ease: "power3.inOut",
-          transformOrigin: "right bottom",
         },
         0
       );
@@ -1027,6 +1055,7 @@ export const FolderStackAnimation: React.FC = () => {
           heroTitleRef={caseHeroTitleRef}
           initialUnfolded={phase === "case-view" || phase === "closing-to-stack"}
           folderStartDelta={folderStartDelta}
+          folderStartX={folderStartX}
           folderStartWidth={folderStartWidth}
           isClosingToStack={phase === "closing-to-stack"}
         />

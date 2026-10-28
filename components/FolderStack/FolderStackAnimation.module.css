@@ -563,9 +563,9 @@
 /* ── Case Hero Title ── */
 .caseHero {
   position: relative;
-  width: var(--container-size);
-  margin: 60px var(--container-offset) 0px;
-  padding: 60px 0px;
+  width: min(92vw, 1340px);
+  margin: 32px auto 0px;
+  padding: 24px 0px 16px;
   z-index: 50;
   display: flex;
   justify-content: flex-start;
@@ -657,30 +657,67 @@
   transform: translateY(-1px);
 }
 
-/* ── Case Content Wrapper ── */
+.caseCloseBtn {
+  position: fixed;
+  top: 24px;
+  right: 28px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(20, 20, 20, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1001;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+}
+
+.caseCloseBtn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: scale(1.08);
+}
+
+/* ── Case Content Wrapper (Centers the 2-Flap Folder Spread in Viewport) ── */
 .caseContent {
-  width: var(--container-size);
-  margin: 0 var(--container-offset);
+  width: 100%;
+  margin: 0 auto;
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 0;
-  padding-bottom: 120px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0 60px 0;
   box-sizing: border-box;
 }
 
+.caseSpread {
+  width: min(92vw, 1340px);
+  position: relative;
+  display: flex;
+  justify-content: flex-end; /* right half holds caseFolder; left half holds swung cover */
+  transform-style: preserve-3d;
+  perspective: var(--stack-perspective, 1400px);
+}
+
 .caseContentInner {
-  width: var(--case-content-width);
+  width: 100%;
   margin: 0;
   padding: 0;
   position: relative;
   display: flex;
-  flex-direction: column;
+  justify-content: flex-end;
 }
 
-/* ── 3D Case Folder ── */
+/* ── 3D Case Folder (Right Flap) ── */
 .caseFolder {
-  width: 100%;
+  width: 50%;
   position: relative;
   perspective: var(--stack-perspective);
   transform-style: preserve-3d;
@@ -721,8 +758,16 @@
 
 .caseFolderCoverBack {
   background-color: var(--case-color, #d6231b);
-  transform: rotateX(180deg);
-  overflow: hidden;
+  transform: rotateY(180deg);
+  overflow: visible;
+  box-sizing: border-box;
+  padding: 28px 18px 36px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  border-radius: var(--stack-border-radius, 6px) 0 0 var(--stack-border-radius, 6px);
+  box-shadow: -20px 20px 60px rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
 }
 
 .caseFolderCoverBackOverlay {
@@ -803,33 +848,36 @@
 /* ── Folder Inner Background ── */
 .caseFolderInner {
   background-color: var(--case-color, #d6231b);
-  border-radius: 0 0 var(--stack-border-radius) 0;
+  border-radius: 0 var(--stack-border-radius, 6px) var(--stack-border-radius, 6px) 0;
   box-sizing: border-box;
-  padding: var(--container-offset) var(--container-offset) var(--container-offset) 0px;
+  padding: 28px 28px 36px 18px;
   position: relative;
-  min-height: 1650px;
+  min-height: 1050px;
   width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  align-items: stretch;
+  box-shadow: 20px 20px 60px rgba(0, 0, 0, 0.45);
 }
 
 /* ── Archival A4 Notion Document Wrapper ── */
 .caseFolderA4Container {
   width: 100%;
+  height: 100%;
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
   position: relative;
   z-index: 2;
   box-sizing: border-box;
-  padding: 0 0 32px 0;
+  padding: 0;
 }
 
 @media (max-width: 900px) {
-  .caseFolderA4Container {
-    padding: 0 0 50px 8px;
-    justify-content: center;
+  .caseFolderInner {
+    padding: 20px 14px 28px 10px;
+  }
+  .caseFolderCoverBack {
+    padding: 20px 10px 28px 14px;
   }
 }
 
@@ -1373,4 +1421,138 @@
 
 .caseNextWidgetOverscroll .caseNextActionInner {
   transform: translateX(0px);
+}
+
+/* ── Spine Center Crease between Two Flaps ── */
+.caseFolderCenterCrease {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.28) 0%,
+    rgba(0, 0, 0, 0.05) 50%,
+    rgba(0, 0, 0, 0.28) 100%
+  );
+  z-index: 15;
+  pointer-events: none;
+}
+
+.flapSheetWrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 2;
+}
+
+/* ── Zoomed-In Dedicated Editor Overlay ── */
+.zoomEditorOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background-color: #fbf9f6;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  padding: 88px 24px 120px;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+.zoomEditorHeader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: #fbf9f6;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  z-index: 10000;
+  box-sizing: border-box;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+
+.zoomFlapIndicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #18181b;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.zoomBackBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #18181b;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.zoomBackBtn:hover {
+  background: #f4f4f5;
+  border-color: #2e66f6;
+  color: #2e66f6;
+  transform: translateY(-1px);
+}
+
+.zoomEscKbd {
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #71717a;
+  background: #f4f4f5;
+  border: 1px solid #e4e4e7;
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-left: 4px;
+}
+
+.zoomFlapIndicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #3f3f46;
+}
+
+.zoomFlapDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.zoomSaveStatus {
+  font-size: 0.8rem;
+  color: #71717a;
+}
+
+.zoomEditorBody {
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
 }

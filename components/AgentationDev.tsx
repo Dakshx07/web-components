@@ -3,7 +3,8 @@
 import dynamic from "next/dynamic";
 
 const Agentation = dynamic(
-  () => import("agentation").then((mod) => mod.Agentation),
+  // @ts-expect-error - optional dev package
+  () => import("agentation").then((mod) => mod.Agentation).catch(() => () => null),
   { ssr: false }
 );
 

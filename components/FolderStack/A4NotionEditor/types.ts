@@ -30,3 +30,22 @@ export interface CommandPalettePosition {
   top: number;
   left: number;
 }
+
+export interface A4Page {
+  id: string;
+  pageNumber: number;
+  title: string;
+  blocks: NotionBlock[];
+}
+
+export interface FlapDocument {
+  flap: "left" | "right";
+  pages: A4Page[];
+}
+
+export interface FolderCaseDocument {
+  slug: string;
+  leftDocument: FlapDocument;
+  rightDocument: FlapDocument;
+}
+

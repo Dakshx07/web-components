@@ -179,21 +179,33 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 }) => {
   const [search, setSearch] = useState(searchQuery);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [prevSearchQuery, setPrevSearchQuery] = useState(searchQuery);
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+
+  if (prevSearchQuery !== searchQuery) {
+    setPrevSearchQuery(searchQuery);
+    setSearch(searchQuery || "");
+    setSelectedIndex(0);
+  }
+
+  if (prevIsOpen !== isOpen) {
+    setPrevIsOpen(isOpen);
+    if (!isOpen) {
+      setSearch("");
+      setSelectedIndex(0);
+    }
+  }
+
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   useEffect(() => {
     if (isOpen) {
-      setSearch(searchQuery || "");
-      setSelectedIndex(0);
       const timer = setTimeout(() => inputRef.current?.focus(), 20);
       return () => clearTimeout(timer);
-    } else {
-      setSearch("");
-      setSelectedIndex(0);
     }
-  }, [isOpen, searchQuery]);
+  }, [isOpen]);
 
   const filtered = SLASH_COMMANDS.filter(
     (cmd) =>

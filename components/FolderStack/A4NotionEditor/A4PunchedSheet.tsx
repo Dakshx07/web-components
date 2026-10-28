@@ -6,50 +6,64 @@ interface A4PunchedSheetProps {
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
+  punchEdge?: "left" | "right";
+  isHovered?: boolean;
+  onClick?: () => void;
 }
 
 /**
- * Archival A4 Document Sheet with Balanced Punched Holes along the left margin
- * Gives the authentic feel of physical stationery fastened into a binder folder.
- * Takes the full width of the inner folder space with realistic binder hole frequency.
+ * Archival A4 Document Sheet with Balanced Punched Holes along spine margin
+ * - punchEdge="right" for Left Flap pages (facing center spine)
+ * - punchEdge="left" for Right Flap pages (facing center spine)
  */
 export const A4PunchedSheet: React.FC<A4PunchedSheetProps> = ({
   children,
   className,
   style,
+  punchEdge = "left",
+  isHovered = false,
+  onClick,
 }) => {
+  const isRightPunch = punchEdge === "right";
+
   return (
     <div
       className={className}
+      onClick={onClick}
       style={{
         position: "relative",
         width: "100%",
-        minHeight: "1550px",
+        minHeight: "1000px",
         backgroundColor: "#FFFFFF",
         borderRadius: "4px",
-        boxShadow: "0 12px 40px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(0, 0, 0, 0.08)",
-        border: "1px solid rgba(0, 0, 0, 0.08)",
+        boxShadow: isHovered
+          ? "0 0 0 2.5px #2e66f6, 0 16px 44px rgba(46, 102, 246, 0.22)"
+          : "0 12px 36px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06)",
+        border: isHovered ? "1px solid #2e66f6" : "1px solid rgba(0, 0, 0, 0.08)",
         boxSizing: "border-box",
         color: "#18181b",
         fontFamily: "var(--font-inter, sans-serif)",
         display: "flex",
+        transition: "box-shadow 0.25s ease, border-color 0.25s ease, transform 0.25s ease",
         ...style,
       }}
     >
-      {/* ── Left Spine Binder Strip with Balanced Punched Holes ── */}
+      {/* ── Spine Binder Strip with Balanced Punched Holes ── */}
       <div
         style={{
           position: "absolute",
-          left: 0,
+          ...(isRightPunch ? { right: 0 } : { left: 0 }),
           top: 0,
           bottom: 0,
-          width: "4.5rem",
+          width: "4.25rem",
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-evenly",
           alignItems: "center",
-          padding: "4rem 0",
-          borderRight: "1px solid rgba(0, 0, 0, 0.08)",
+          padding: "3.5rem 0",
+          ...(isRightPunch
+            ? { borderLeft: "1px solid rgba(0, 0, 0, 0.08)" }
+            : { borderRight: "1px solid rgba(0, 0, 0, 0.08)" }),
           pointerEvents: "none",
           zIndex: 5,
         }}
@@ -58,8 +72,8 @@ export const A4PunchedSheet: React.FC<A4PunchedSheetProps> = ({
           <div
             key={n}
             style={{
-              width: "16px",
-              height: "16px",
+              width: "14px",
+              height: "14px",
               borderRadius: "50%",
               backgroundColor: "var(--case-color, #194bfd)",
               boxShadow:
@@ -75,7 +89,9 @@ export const A4PunchedSheet: React.FC<A4PunchedSheetProps> = ({
         style={{
           flex: 1,
           minWidth: 0,
-          padding: "3.5rem 4rem 8rem calc(4.5rem + 2rem)",
+          padding: isRightPunch
+            ? "3.5rem calc(4.25rem + 2rem) 6rem 3.5rem"
+            : "3.5rem 3.5rem 6rem calc(4.25rem + 2rem)",
           boxSizing: "border-box",
         }}
       >

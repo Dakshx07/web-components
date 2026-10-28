@@ -8,7 +8,7 @@ import { TheFooter } from "./TheFooter";
 import styles from "./FolderStackAnimation.module.css";
 import { soundFx } from "./soundFx";
 import { getNextCaseTarget } from "./caseSequence";
-import { ARCHITECT_ARCHIVES, DraggableItem } from "./architectScrapbookData";
+import { A4NotionEditor } from "./A4NotionEditor/A4NotionEditor";
 
 interface ReaderViewProps {
   group: FolderGroupConfig;
@@ -66,18 +66,10 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
 
   const hasNavigatedRef = useRef(false);
   const contentRef = useRef<HTMLDivElement>(null);
-  const archive = useMemo(() => {
-    return ARCHITECT_ARCHIVES[currentCase.slug] || ARCHITECT_ARCHIVES["mary-colter"];
-  }, [currentCase.slug]);
-
-  const [positions, setPositions] = useState<Record<string, DraggableItem>>(
-    () => archive.initialPositions
-  );
 
   const [prevSlug, setPrevSlug] = useState(currentCase.slug);
   if (prevSlug !== currentCase.slug) {
     setPrevSlug(currentCase.slug);
-    setPositions(archive.initialPositions);
     setOverscrollAmount(0);
     setIsOverscroll(false);
   }
@@ -190,60 +182,9 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
     };
   }, [isOverscroll]);
 
-  const [activeDrag, setActiveDrag] = useState<{
-    id: string;
-    startX: number;
-    startY: number;
-    origX: number;
-    origY: number;
-  } | null>(null);
-
-  const handlePointerDown = (id: string, e: React.PointerEvent) => {
-    e.preventDefault();
-    const item = positions[id] || { id, x: 0, y: 0, rotation: 0, zIndex: 10 };
-
-    soundFx.playPaperRustle();
-
-    // Bring clicked element to top z-index
-    const maxZ = Math.max(...Object.values(positions).map((p) => p.zIndex), 20);
-    setPositions((prev) => ({
-      ...prev,
-      [id]: { ...(prev[id] || item), zIndex: maxZ + 1 },
-    }));
-
-    setActiveDrag({
-      id,
-      startX: e.clientX,
-      startY: e.clientY,
-      origX: item.x,
-      origY: item.y,
-    });
-  };
-
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (!activeDrag) return;
-    const dx = e.clientX - activeDrag.startX;
-    const dy = e.clientY - activeDrag.startY;
-
-    setPositions((prev) => ({
-      ...prev,
-      [activeDrag.id]: {
-        ...(prev[activeDrag.id] || { id: activeDrag.id, rotation: 0, zIndex: 10 }),
-        x: activeDrag.origX + dx,
-        y: activeDrag.origY + dy,
-      },
-    }));
-  };
-
-  const handlePointerUp = () => {
-    setActiveDrag(null);
-  };
-
   return (
     <div
       className={styles.pageCase}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
       style={
         {
           "--case-color": currentCase.color,
@@ -431,179 +372,24 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                 })}
               </div>
 
-              <div className={styles.caseFolderSheetWrapper}>
-                <div className={styles.caseFolderSheet}>
-                  {/* Texture Overlays */}
-                  <div className={styles.caseFolderSheetOverlay} />
-                  <div className={styles.caseFolderSheetMarks} />
-
-                  {/* Left Spine Punch Holes (9 holes matching Mosby) */}
-                  <div className={styles.caseFolderSheetClip}>
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
-                      <span key={n} />
-                    ))}
-                  </div>
-
-                  {/* Sheet Editorial Content */}
-                  <div className={styles.caseFolderSheetInner}>
-                    {/* Left Column: Clipped Photo & Bio */}
-                    <div className={styles.sheetLeftCol}>
-                      <div className={styles.sheetPhoto}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={currentCase.portrait}
-                          alt={currentCase.name}
-                        />
-                        {/* Authentic Wire Paperclip */}
-                        <div className={styles.contentPaperclip}>
-                          <svg
-                            width="20"
-                            height="89"
-                            viewBox="0 0 24 107"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M2.05513 5.28193C4.21232 2.09502 7.8614 0.000174314 11.9995 3.55316e-05C18.6269 3.55316e-05 23.9995 5.37279 23.9996 12.0001L24.0003 95.0002C24.0003 101.628 18.6275 107 12.0002 107C5.37279 107 0.00010339 101.628 0.00010339 95.0002L0.00010339 42.905H1.99989L1.99989 95.0002C1.99989 100.523 6.47735 105.001 12.0002 105.001C17.5229 105 22.0005 100.523 22.0005 95.0002L21.9998 12.0001C21.9997 6.47745 17.5229 2.00066 12.0002 2.00051C8.34976 2.00051 5.15651 3.95666 3.41065 6.87775L2.05513 5.28193Z"
-                              fill="#191919"
-                            />
-                          </svg>
-                        </div>
-                      </div>
-
-                      <div className={styles.sheetInfoWrapper}>
-                        <div className={styles.sheetInfo}>
-                          <p>Born:</p>
-                          <p>{currentCase.born}</p>
-                        </div>
-                        <div className={styles.sheetInfo}>
-                          <p>Died:</p>
-                          <p>{currentCase.died}</p>
-                        </div>
-                        <div className={styles.sheetInfo}>
-                          <p>Location:</p>
-                          <p>{currentCase.location}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right Column: Editorial Lead & Body Paragraphs */}
-                    <div className={styles.sheetRightCol}>
-                      <div className={styles.sheetDesc}>
-                        <p>
-                          <span className={styles.sheetDropCap}>
-                            {currentCase.dropCap}
-                          </span>
-                          {currentCase.leadParagraph}
-                        </p>
-                        {currentCase.bodyParagraphs.map((para, pIdx) => (
-                          <p key={pIdx}>{para}</p>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Authentic Scrapbook Archive (Inside the Dossier Folder) */}
+              {/* Authentic Archival A4 Sheet with Notion-Style Editor */}
               <div
                 ref={scrapbookRef}
-                className={styles.caseFolderScrapbook}
+                className={styles.caseFolderA4Container}
                 style={{ opacity: !initialUnfolded ? 0 : 1 }}
               >
-                {archive.clusters.map((cluster) => (
-                  <div
-                    key={cluster.card.id}
-                    className={styles.scrapbookCluster}
-                    style={{
-                      top: cluster.top,
-                      left: cluster.left,
-                      width: cluster.width,
-                      height: cluster.height,
-                    }}
-                  >
-                    {/* Draggable Note Card */}
-                    <div
-                      className={`${styles.scrapbookItemDraggable} ${
-                        cluster.card.cardStyle === "teal"
-                          ? styles.scrapbookCardTeal
-                          : cluster.card.cardStyle === "rose"
-                          ? styles.scrapbookCardRose
-                          : cluster.card.cardStyle === "purple"
-                          ? styles.scrapbookCardPurple
-                          : styles.scrapbookCardYellow
-                      }`}
-                      onPointerDown={(e) => handlePointerDown(cluster.card.id, e)}
-                      style={{
-                        transform: `translate(${positions[cluster.card.id]?.x ?? 0}px, ${
-                          positions[cluster.card.id]?.y ?? 0
-                        }px) rotate(${positions[cluster.card.id]?.rotation ?? 0}deg)`,
-                        width: cluster.card.width,
-                        minHeight: cluster.card.minHeight,
-                        zIndex: positions[cluster.card.id]?.zIndex ?? 14,
-                      }}
-                    >
-                      <h3 className={styles.scrapbookCardTitle}>{cluster.card.title}</h3>
-                      <p className={styles.scrapbookCardText}>{cluster.card.text}</p>
-                    </div>
-
-                    {/* Draggable Photos / Blueprints / Postcards */}
-                    {cluster.photos.map((photo) => {
-                      const itemPos = positions[photo.id];
-                      return (
-                        <div
-                          key={photo.id}
-                          className={`${styles.scrapbookItemDraggable} ${
-                            photo.photoStyle === "blueprint"
-                              ? styles.blueprintBorder
-                              : photo.photoStyle === "postcard"
-                              ? styles.postcardBorder
-                              : styles.vintagePhotoBorder
-                          }`}
-                          onPointerDown={(e) => handlePointerDown(photo.id, e)}
-                          style={{
-                            transform: `translate(${itemPos?.x ?? 0}px, ${itemPos?.y ?? 0}px) rotate(${
-                              itemPos?.rotation ?? 0
-                            }deg)`,
-                            width: photo.width,
-                            zIndex: itemPos?.zIndex ?? 10,
-                          }}
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={photo.src} alt={photo.alt} />
-                        </div>
-                      );
-                    })}
-
-                    {/* Optional Archival Wire Paperclip */}
-                    {cluster.hasPaperclip && (
-                      <div
-                        className={styles.scrapbookItemDraggable}
-                        onPointerDown={(e) => handlePointerDown("hopiPaperclip", e)}
-                        style={{
-                          transform: `translate(${positions.hopiPaperclip?.x ?? 420}px, ${
-                            positions.hopiPaperclip?.y ?? 23
-                          }px) rotate(${positions.hopiPaperclip?.rotation ?? 180}deg)`,
-                          width: "36px",
-                          zIndex: positions.hopiPaperclip?.zIndex ?? 16,
-                        }}
-                      >
-                        <svg
-                          width="32"
-                          height="100"
-                          viewBox="0 0 24 107"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M2.05513 5.28193C4.21232 2.09502 7.8614 0.000174314 11.9995 3.55316e-05C18.6269 3.55316e-05 23.9995 5.37279 23.9996 12.0001L24.0003 95.0002C24.0003 101.628 18.6275 107 12.0002 107C5.37279 107 0.00010339 101.628 0.00010339 95.0002L0.00010339 42.905H1.99989L1.99989 95.0002C1.99989 100.523 6.47735 105.001 12.0002 105.001C17.5229 105 22.0005 100.523 22.0005 95.0002L21.9998 12.0001C21.9997 6.47745 17.5229 2.00066 12.0002 2.00051C8.34976 2.00051 5.15651 3.95666 3.41065 6.87775L2.05513 5.28193Z"
-                            fill="#191919"
-                          />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                <A4NotionEditor
+                  key={currentCase.slug}
+                  folderCategory={group.category}
+                  initialTitle={currentCase.name}
+                  initialBlocks={[
+                    {
+                      id: "block-1",
+                      type: "paragraph",
+                      content: "",
+                    },
+                  ]}
+                />
               </div>
             </div>
           </div>

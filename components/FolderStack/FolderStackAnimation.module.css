@@ -807,12 +807,30 @@
   box-sizing: border-box;
   padding: var(--container-offset) var(--container-offset) var(--container-offset) 0px;
   position: relative;
-  min-height: 3000px;
+  min-height: 1650px;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+/* ── Archival A4 Notion Document Wrapper ── */
+.caseFolderA4Container {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  position: relative;
+  z-index: 2;
+  box-sizing: border-box;
+  padding: 0 0 32px 0;
+}
+
+@media (max-width: 900px) {
+  .caseFolderA4Container {
+    padding: 0 0 50px 8px;
+    justify-content: center;
+  }
 }
 
 /* ── Archival Cream Paper Sheet ── */

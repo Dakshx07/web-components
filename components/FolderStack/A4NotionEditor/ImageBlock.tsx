@@ -31,10 +31,14 @@ export const ImageBlock: React.FC<ImageBlockProps> = ({
       return;
     }
 
-    const objectUrl = URL.createObjectURL(file);
-    onChangeContent(objectUrl);
-    setUrlInput(objectUrl);
-    setIsEditing(false);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      onChangeContent(dataUrl);
+      setUrlInput(dataUrl);
+      setIsEditing(false);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleEmbedSubmit = (e: React.FormEvent) => {

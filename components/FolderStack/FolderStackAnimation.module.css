@@ -79,10 +79,10 @@
 }
 
 .pageHome.pageCaseActive {
-  height: auto;
-  min-height: 100vh;
-  overflow: visible;
-  justify-content: flex-start;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  justify-content: center;
   display: flex;
 }
 
@@ -549,23 +549,40 @@
    ════════════════════════════════════════════════════════════════ */
 
 .pageCase {
-  align-items: flex-start;
+  --case-spread-height: 870px;
+  --case-flap-width: calc(var(--case-spread-height) / 1.414);
+  --case-spread-width: calc(var(--case-flap-width) * 2);
+  align-items: center;
+  justify-content: center;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
   position: relative;
   width: 100%;
-  background-color: #141414;
+  background-color: #0c0c0d;
   color: #ffffff;
-  overflow-x: hidden;
+}
+
+@media (max-height: 950px), (max-width: 1399px) {
+  .pageCase {
+    --case-spread-height: 720px;
+  }
+}
+
+@media (max-height: 800px), (max-width: 1024px) {
+  .pageCase {
+    --case-spread-height: 620px;
+  }
 }
 
 /* ── Case Hero Title ── */
 .caseHero {
   position: relative;
-  width: min(92vw, 1340px);
-  margin: 32px auto 0px;
-  padding: 24px 0px 16px;
+  width: var(--case-spread-width);
+  margin: 0 auto 10px;
+  padding: 0;
   z-index: 50;
   display: flex;
   justify-content: flex-start;
@@ -619,8 +636,8 @@
 
 .caseHeroTitle {
   font-family: var(--font-display-condensed), "Founders Grotesk", Impact, sans-serif;
-  font-size: clamp(3.5rem, 8.33vw, 120px);
-  line-height: 0.85;
+  font-size: clamp(1.75rem, 3.2vw, 44px);
+  line-height: 0.95;
   font-weight: 700;
   text-transform: uppercase;
   color: var(--color-contrast, #fdfaf7);
@@ -693,17 +710,18 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 0 0 60px 0;
+  padding: 0 0 20px 0;
   box-sizing: border-box;
 }
 
 .caseSpread {
-  width: min(92vw, 1340px);
+  width: var(--case-spread-width);
+  height: var(--case-spread-height);
   position: relative;
   display: flex;
   justify-content: flex-end; /* right half holds caseFolder; left half holds swung cover */
   transform-style: preserve-3d;
-  perspective: var(--stack-perspective, 1400px);
+  perspective: var(--stack-perspective, 3000px);
 }
 
 .caseContentInner {
@@ -718,12 +736,15 @@
 /* ── 3D Case Folder (Right Flap) ── */
 .caseFolder {
   width: 50%;
+  height: 100%;
   position: relative;
   perspective: var(--stack-perspective);
   transform-style: preserve-3d;
   transform-origin: right bottom;
   border-radius: 0 var(--stack-border-radius) var(--stack-border-radius) 0;
   will-change: transform, width, height;
+  flex-shrink: 0;
+  min-width: 0;
 }
 
 /* 3D Flap Cover */
@@ -761,13 +782,14 @@
   transform: rotateY(180deg);
   overflow: visible;
   box-sizing: border-box;
-  padding: 28px 18px 36px 28px;
+  padding: 16px 14px 20px 18px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   border-radius: var(--stack-border-radius, 6px) 0 0 var(--stack-border-radius, 6px);
   box-shadow: -20px 20px 60px rgba(0, 0, 0, 0.45);
   pointer-events: auto;
+  height: 100%;
 }
 
 .caseFolderCoverBackOverlay {
@@ -816,14 +838,28 @@
   top: 0;
   transform: translate(100%, -100%) rotate(90deg);
   transform-origin: left bottom;
-  width: 100%;
   z-index: -1;
+}
+
+.caseFolderTags .tag {
+  --tag-height: 1.75rem;
+  height: 1.75rem;
+}
+
+.caseFolderTags .tagMiddle span {
+  font-size: 0.88rem;
+  letter-spacing: 0.02em;
+}
+
+.caseFolderTags .tagStart,
+.caseFolderTags .tagEnd {
+  width: calc(1.75rem * var(--tag-aspect-ratio));
 }
 
 .caseFolderTagsPage {
   display: flex;
-  margin-block-end: -20px;
-  padding-block-end: 20px;
+  margin-block-end: -12px;
+  padding-block-end: 12px;
   position: relative;
   transition: transform 0.325s cubic-bezier(0.33, 1, 0.68, 1);
   cursor: pointer;
@@ -834,7 +870,7 @@
   border-radius: var(--stack-border-radius, 4px) var(--stack-border-radius, 4px) 0 0;
   bottom: -2px;
   content: "";
-  height: 24px;
+  height: 18px;
   left: 0px;
   position: absolute;
   width: 100%;
@@ -850,9 +886,10 @@
   background-color: var(--case-color, #d6231b);
   border-radius: 0 var(--stack-border-radius, 6px) var(--stack-border-radius, 6px) 0;
   box-sizing: border-box;
-  padding: 28px 28px 36px 18px;
+  padding: 16px 18px 20px 14px;
   position: relative;
-  min-height: 1050px;
+  height: 100%;
+  min-height: unset;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -864,6 +901,7 @@
 .caseFolderA4Container {
   width: 100%;
   height: 100%;
+  flex: 1;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -1216,6 +1254,8 @@
   width: 100%;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   position: relative;
   will-change: transform;
 }
@@ -1444,6 +1484,7 @@
 .flapSheetWrapper {
   width: 100%;
   height: 100%;
+  flex: 1;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -1458,27 +1499,37 @@
   background-color: #fbf9f6;
   overflow-y: scroll;
   overflow-x: hidden;
-  padding: 88px 24px 120px;
+  padding: 40px 24px 120px;
   box-sizing: border-box;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
 }
 
-.zoomEditorHeader {
+.zoomBackFloatingBtn {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 64px;
-  background: #fbf9f6;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  top: 24px;
+  left: 28px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 32px;
-  z-index: 10000;
-  box-sizing: border-box;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10001;
+  color: #18181b;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.zoomBackFloatingBtn:hover {
+  background: #f4f4f5;
+  border-color: #2e66f6;
+  color: #2e66f6;
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
 }
 
 .zoomFlapIndicator {

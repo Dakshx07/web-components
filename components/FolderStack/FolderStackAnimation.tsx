@@ -235,6 +235,15 @@ export const FOLDER_GROUPS: FolderGroupConfig[] = [
   },
 ];
 
+// Responsive A4 flap width matching CSS breakpoints
+const getResponsiveFlapWidth = () => {
+  if (typeof window === "undefined") return 615;
+  const h = window.innerHeight;
+  const w = window.innerWidth;
+  const spreadHeight = h <= 800 || w <= 1024 ? 620 : h <= 950 || w <= 1399 ? 720 : 870;
+  return Math.round(spreadHeight / 1.414);
+};
+
 export const FolderStackAnimation: React.FC = () => {
   const [phase, setPhase] = useState<AnimationPhase>("stack");
   const [hoveredGroupId, setHoveredGroupId] = useState<number>(-1);
@@ -355,8 +364,7 @@ export const FolderStackAnimation: React.FC = () => {
       deltaY = Math.max(80, Math.round(rect.top - 216));
       startWidth = Math.round(rect.width);
 
-      const targetSpreadWidth = Math.min(window.innerWidth * 0.92, 1340);
-      const targetFlapWidth = Math.round(targetSpreadWidth / 2);
+      const targetFlapWidth = getResponsiveFlapWidth();
       const spreadRight = Math.round((window.innerWidth / 2) + targetFlapWidth);
       const naturalLeftAtStart = spreadRight - startWidth;
       deltaX = Math.round(rect.left - naturalLeftAtStart);
@@ -414,8 +422,7 @@ export const FolderStackAnimation: React.FC = () => {
 
     // 3. Reader: Folder container glides from slot deltaY up to 0 and adapts width
     if (caseFolderRef.current) {
-      const targetSpreadWidth = Math.min(window.innerWidth * 0.92, 1340);
-      const targetFlapWidth = Math.round(targetSpreadWidth / 2);
+      const targetFlapWidth = getResponsiveFlapWidth();
 
       tlEnter.fromTo(
         caseFolderRef.current,
@@ -701,7 +708,7 @@ export const FolderStackAnimation: React.FC = () => {
       // Phase B: Seamlessly levels out into the stack slot without halting at angle
       tlClose.to(
         caseFolderRef.current,
-        { rotate: 0, duration: 0.8, ease: "power2.inOut" },
+        { rotate: 0, duration: 0.8, ease: "power3.inOut" },
         0.55
       );
     }
@@ -871,7 +878,7 @@ export const FolderStackAnimation: React.FC = () => {
 
   return (
     <div className={`${styles.pageHome} ${phase === "case-view" ? styles.pageCaseActive : ""}`}>
-      {/* Top Header */}
+      {/* Top Header (commented out per design request)
       <header className={styles.theHeader}>
         <div
           className={styles.theLogo}
@@ -899,6 +906,7 @@ export const FolderStackAnimation: React.FC = () => {
           </a>
         </nav>
       </header>
+      */}
 
       {/* Home Scene Container: Stack + Hero */}
       {(phase === "stack" || phase === "unfolding" || phase === "closing-to-stack") && (

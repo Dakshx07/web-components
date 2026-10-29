@@ -55,7 +55,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   const leftSheetRef = useRef<HTMLDivElement>(null);
   const rightSheetRef = useRef<HTMLDivElement>(null);
   const zoomOverlayRef = useRef<HTMLDivElement>(null);
-  const zoomHeaderRef = useRef<HTMLDivElement>(null);
+  const zoomHeaderRef = useRef<HTMLButtonElement>(null);
   const zoomSheetContainerRef = useRef<HTMLDivElement>(null);
   const isZoomAnimating = useRef(false);
 
@@ -490,75 +490,29 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
           role="dialog"
           aria-label="A4 Document Editor"
         >
-          {/* Header Bar */}
-          <div ref={zoomHeaderRef} className={styles.zoomEditorHeader}>
-            <button
-              type="button"
-              className={styles.zoomBackBtn}
-              onClick={handleZoomOut}
-              title="Return to Folder Spread (Esc)"
+          {/* Minimalist Floating Top-Left Back Button */}
+          <button
+            ref={zoomHeaderRef}
+            type="button"
+            className={styles.zoomBackFloatingBtn}
+            onClick={handleZoomOut}
+            title="Return to Folder Spread (Esc)"
+            aria-label="Return to Folder Spread"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M19 12H5M12 19l-7-7 7-7" />
-              </svg>
-              <span>Back to Folder Spread</span>
-              <kbd className={styles.zoomEscKbd}>ESC</kbd>
-            </button>
-
-            <div className={styles.zoomFlapIndicator}>
-              <div
-                className={styles.zoomFlapDot}
-                style={{ backgroundColor: currentCase.color }}
-              />
-              <span>
-                {currentCase.name} • {zoomState === "left" ? "Left Flap" : "Right Flap"}
-              </span>
-            </div>
-
-            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-              <span className={styles.zoomSaveStatus}>✓ Saved locally</span>
-              <button
-                type="button"
-                onClick={handleZoomOut}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: "8px",
-                  color: "#71717a",
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-                title="Close Editor (Esc)"
-                aria-label="Close Editor"
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            </div>
-          </div>
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
+          </button>
 
           {/* Centered A4 Notion Multi-Page Editor (FLIP animated by GSAP) */}
           <div ref={zoomSheetContainerRef} className={styles.zoomEditorBody}>

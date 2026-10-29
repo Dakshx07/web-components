@@ -33,13 +33,15 @@ export const A4PunchedSheet: React.FC<A4PunchedSheetProps> = ({
       style={{
         position: "relative",
         width: "100%",
-        minHeight: "1000px",
+        minHeight: style?.height === "100%" ? "unset" : (style?.minHeight ?? "1000px"),
+        height: style?.height ?? "auto",
+        flex: style?.flex ?? 1,
         backgroundColor: "#FFFFFF",
         borderRadius: "4px",
         boxShadow: isHovered
-          ? "0 0 0 2.5px #2e66f6, 0 16px 44px rgba(46, 102, 246, 0.22)"
+          ? "0 16px 44px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08)"
           : "0 12px 36px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06)",
-        border: isHovered ? "1px solid #2e66f6" : "1px solid rgba(0, 0, 0, 0.08)",
+        border: isHovered ? "1px solid rgba(0, 0, 0, 0.16)" : "1px solid rgba(0, 0, 0, 0.08)",
         boxSizing: "border-box",
         color: "#18181b",
         fontFamily: "var(--font-inter, sans-serif)",
@@ -55,12 +57,12 @@ export const A4PunchedSheet: React.FC<A4PunchedSheetProps> = ({
           ...(isRightPunch ? { right: 0 } : { left: 0 }),
           top: 0,
           bottom: 0,
-          width: "4.25rem",
+          width: "clamp(3.25rem, 4.5vw, 4.25rem)",
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-evenly",
           alignItems: "center",
-          padding: "3.5rem 0",
+          padding: "clamp(1.5rem, 3.5vh, 3.5rem) 0",
           ...(isRightPunch
             ? { borderLeft: "1px solid rgba(0, 0, 0, 0.08)" }
             : { borderRight: "1px solid rgba(0, 0, 0, 0.08)" }),
@@ -72,8 +74,8 @@ export const A4PunchedSheet: React.FC<A4PunchedSheetProps> = ({
           <div
             key={n}
             style={{
-              width: "14px",
-              height: "14px",
+              width: "12px",
+              height: "12px",
               borderRadius: "50%",
               backgroundColor: "var(--case-color, #194bfd)",
               boxShadow:
@@ -90,8 +92,8 @@ export const A4PunchedSheet: React.FC<A4PunchedSheetProps> = ({
           flex: 1,
           minWidth: 0,
           padding: isRightPunch
-            ? "3.5rem calc(4.25rem + 2rem) 6rem 3.5rem"
-            : "3.5rem 3.5rem 6rem calc(4.25rem + 2rem)",
+            ? "clamp(1.75rem, 2.5vh, 3rem) calc(clamp(3.25rem, 4.5vw, 4.25rem) + clamp(1rem, 1.5vw, 1.75rem)) clamp(1.75rem, 2.5vh, 3rem) clamp(1.75rem, 2vw, 3rem)"
+            : "clamp(1.75rem, 2.5vh, 3rem) clamp(1.75rem, 2vw, 3rem) clamp(1.75rem, 2.5vh, 3rem) calc(clamp(3.25rem, 4.5vw, 4.25rem) + clamp(1rem, 1.5vw, 1.75rem))",
           boxSizing: "border-box",
         }}
       >

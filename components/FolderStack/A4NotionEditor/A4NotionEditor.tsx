@@ -316,11 +316,13 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
       blocks: initialBlocks,
     };
 
-    const previewWords = firstPage.blocks.reduce(
+    /*
+    const _previewWords = firstPage.blocks.reduce(
       (sum, b) => sum + (b.content ? b.content.trim().split(/\s+/).filter(Boolean).length : 0),
       0
     );
-    const estRead = Math.max(1, Math.ceil(previewWords / 200));
+    const _estRead = Math.max(1, Math.ceil(_previewWords / 200));
+    */
 
     return (
       <div
@@ -328,6 +330,10 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
         onClick={onClick}
         style={{
           width: "100%",
+          height: "100%",
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
           position: "relative",
           cursor: "pointer",
           userSelect: "none",
@@ -337,17 +343,19 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
           punchEdge={punchEdge}
           isHovered={isHovered}
           style={{
-            minHeight: "880px",
+            width: "100%",
             height: "100%",
+            flex: 1,
+            minHeight: "unset",
             boxShadow:
               activePages.length > 1
                 ? isHovered
-                  ? "0 0 0 2.5px #2e66f6, 0 4px 0 -1px #f4f4f5, 0 5px 0 1px rgba(0,0,0,0.12), 0 9px 0 -1px #e4e4e7, 0 10px 0 1px rgba(0,0,0,0.14), 0 20px 48px rgba(46, 102, 246, 0.25)"
+                  ? "0 4px 0 -1px #f4f4f5, 0 5px 0 1px rgba(0,0,0,0.12), 0 9px 0 -1px #e4e4e7, 0 10px 0 1px rgba(0,0,0,0.14), 0 20px 48px rgba(0, 0, 0, 0.2)"
                   : "0 4px 0 -1px #f4f4f5, 0 5px 0 1px rgba(0,0,0,0.08), 0 9px 0 -1px #e4e4e7, 0 10px 0 1px rgba(0,0,0,0.09), 0 16px 36px rgba(0, 0, 0, 0.12)"
                 : undefined,
           }}
         >
-          {/* Header Bar matching Figma */}
+          {/* Header Bar matching Figma (commented out per design request)
           <div
             style={{
               display: "flex",
@@ -378,12 +386,13 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
               <span>Live Document</span>
             </div>
           </div>
+          */}
 
           {/* Title */}
-          <div style={{ marginBottom: "20px" }}>
+          <div style={{ marginBottom: "16px" }}>
             <h2
               style={{
-                fontSize: "1.9rem",
+                fontSize: "clamp(1.2rem, 2vw, 1.75rem)",
                 fontWeight: 800,
                 color: "#18181b",
                 margin: 0,
@@ -395,58 +404,117 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
             </h2>
           </div>
 
-          {/* Preview Blocks */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px", opacity: 0.9 }}>
-            {firstPage.blocks.slice(0, 8).map((block) => (
-              <div
-                key={block.id}
-                style={{
-                  fontSize:
-                    block.type === "h1"
-                      ? "1.4rem"
-                      : block.type === "h2"
-                      ? "1.2rem"
-                      : "0.95rem",
-                  fontWeight: block.type.startsWith("h") ? 700 : 400,
-                  color: block.content ? "#27272a" : "#a1a1aa",
-                  lineHeight: 1.6,
-                }}
-              >
-                {block.content || "Type '/' for commands..."}
-              </div>
-            ))}
+          {/* Preview Blocks with Rich Formatting */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px", opacity: 0.9 }}>
+            {firstPage.blocks.slice(0, 6).map((block) => {
+              if (block.type === "image" && block.content) {
+                return (
+                  <div
+                    key={block.id}
+                    style={{
+                      width: "100%",
+                      maxHeight: "140px",
+                      borderRadius: "6px",
+                      overflow: "hidden",
+                      margin: "4px 0",
+                      backgroundColor: "#f4f4f5",
+                      border: "1px solid rgba(0, 0, 0, 0.08)",
+                    }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={block.content}
+                      alt={block.caption || "Image"}
+                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    />
+                  </div>
+                );
+              }
+              if (block.type === "video" && block.content) {
+                return (
+                  <div
+                    key={block.id}
+                    style={{
+                      width: "100%",
+                      padding: "8px 12px",
+                      borderRadius: "6px",
+                      backgroundColor: "#18181b",
+                      color: "#ffffff",
+                      fontSize: "0.75rem",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      margin: "2px 0",
+                    }}
+                  >
+                    <span>▶</span>
+                    <span>Video Embed</span>
+                  </div>
+                );
+              }
+              if (block.type === "quote") {
+                return (
+                  <div
+                    key={block.id}
+                    style={{
+                      borderLeft: "3px solid #2e66f6",
+                      paddingLeft: "8px",
+                      fontStyle: "italic",
+                      color: "#52525b",
+                      fontSize: "0.85rem",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {block.content || "Empty quote..."}
+                  </div>
+                );
+              }
+              if (block.type === "bullet") {
+                return (
+                  <div
+                    key={block.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: "6px",
+                      fontSize: "0.85rem",
+                      color: "#27272a",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    <span style={{ color: "#71717a" }}>•</span>
+                    <span>{block.content || "List item..."}</span>
+                  </div>
+                );
+              }
+              return (
+                <div
+                  key={block.id}
+                  style={{
+                    fontSize:
+                      block.type === "h1"
+                        ? "1.2rem"
+                        : block.type === "h2"
+                        ? "1.05rem"
+                        : "0.85rem",
+                    fontWeight: block.type.startsWith("h") ? 700 : 400,
+                    color: block.content ? "#27272a" : "#a1a1aa",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {block.content || "Type '/' for commands..."}
+                </div>
+              );
+            })}
           </div>
-
-          {/* Stack indicator pill when multiple pages exist */}
-          {activePages.length > 1 && (
-            <div
-              style={{
-                position: "absolute",
-                bottom: "20px",
-                right: punchEdge === "right" ? "calc(4.25rem + 16px)" : "24px",
-                backgroundColor: "#18181b",
-                color: "#ffffff",
-                padding: "6px 14px",
-                borderRadius: "20px",
-                fontSize: "0.75rem",
-                fontWeight: 600,
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
-              }}
-            >
-              <span>📄</span>
-              <span>{activePages.length} Pages</span>
-            </div>
-          )}
         </A4PunchedSheet>
       </div>
     );
   }
 
   // ── ACTIVE EDITOR MODE (Zoomed In Center View) ──
-  const totalWordsAll = activePages.reduce(
+  /*
+  const _totalWordsAll = activePages.reduce(
     (sum, p) =>
       sum +
       p.blocks.reduce(
@@ -455,7 +523,8 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
       ),
     0
   );
-  const totalEstRead = Math.max(1, Math.ceil(totalWordsAll / 200));
+  const _totalEstRead = Math.max(1, Math.ceil(_totalWordsAll / 200));
+  */
 
   return (
     <div
@@ -481,7 +550,7 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
               boxShadow: "0 18px 50px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.08)",
             }}
           >
-            {/* Document Header Metadata Bar matching Figma */}
+            {/* Document Header Metadata Bar matching Figma (commented out per design request)
             <div
               style={{
                 display: "flex",
@@ -512,6 +581,7 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
                 <span>Live Document</span>
               </div>
             </div>
+            */}
 
             {/* Document Title (Editable on Page 1 or individual page title) */}
             <div style={{ marginBottom: "28px" }}>

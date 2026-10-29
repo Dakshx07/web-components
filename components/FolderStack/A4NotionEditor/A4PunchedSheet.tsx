@@ -57,43 +57,53 @@ export const A4PunchedSheet: React.FC<A4PunchedSheetProps> = ({
           ...(isRightPunch ? { right: 0 } : { left: 0 }),
           top: 0,
           bottom: 0,
-          width: "clamp(3.25rem, 4.5vw, 4.25rem)",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-evenly",
-          alignItems: "center",
-          padding: "clamp(1.5rem, 3.5vh, 3.5rem) 0",
-          ...(isRightPunch
-            ? { borderLeft: "1px solid rgba(0, 0, 0, 0.08)" }
-            : { borderRight: "1px solid rgba(0, 0, 0, 0.08)" }),
+          width: "56px",
           pointerEvents: "none",
           zIndex: 5,
+          ...(isRightPunch
+            ? { borderLeft: "1px solid rgba(0, 0, 0, 0.04)" }
+            : { borderRight: "1px solid rgba(0, 0, 0, 0.04)" }),
         }}
       >
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-          <div
-            key={n}
-            style={{
-              width: "12px",
-              height: "12px",
-              borderRadius: "50%",
-              backgroundColor: "var(--case-color, #194bfd)",
-              boxShadow:
-                "inset 0 2px 4px rgba(0, 0, 0, 0.65), inset 0 1px 1px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.8)",
-              border: "1px solid rgba(0, 0, 0, 0.25)",
-            }}
-          />
-        ))}
+        {/* Upper Arch Ring Hole - Transparent cut-out revealing the 3D metal plate & top ring prong */}
+        <div
+          style={{
+            position: "absolute",
+            top: "41.07%",
+            ...(isRightPunch ? { right: "45px", transform: "translate(50%, -50%)" } : { left: "30px", transform: "translate(-50%, -50%)" }),
+            width: "20px",
+            height: "20px",
+            borderRadius: "50%",
+            backgroundColor: "transparent",
+            boxShadow:
+              "inset 0 1px 4px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 0, 0, 0.12)",
+          }}
+        />
+
+        {/* Center / Bottom Arch Ring Hole - Transparent cut-out revealing the 3D metal plate & bottom ring prong */}
+        <div
+          style={{
+            position: "absolute",
+            top: "50.18%",
+            ...(isRightPunch ? { right: "45px", transform: "translate(50%, -50%)" } : { left: "30px", transform: "translate(-50%, -50%)" }),
+            width: "20px",
+            height: "20px",
+            borderRadius: "50%",
+            backgroundColor: "transparent",
+            boxShadow:
+              "inset 0 1px 4px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 0, 0, 0.12)",
+          }}
+        />
       </div>
 
-      {/* ── Sheet Content Canvas (generous padding clearing the punch strip) ── */}
+      {/* ── Sheet Content Canvas (natural padding clearing the slim 56px punch strip) ── */}
       <div
         style={{
           flex: 1,
           minWidth: 0,
           padding: isRightPunch
-            ? "clamp(1.75rem, 2.5vh, 3rem) calc(clamp(3.25rem, 4.5vw, 4.25rem) + clamp(1rem, 1.5vw, 1.75rem)) clamp(1.75rem, 2.5vh, 3rem) clamp(1.75rem, 2vw, 3rem)"
-            : "clamp(1.75rem, 2.5vh, 3rem) clamp(1.75rem, 2vw, 3rem) clamp(1.75rem, 2.5vh, 3rem) calc(clamp(3.25rem, 4.5vw, 4.25rem) + clamp(1rem, 1.5vw, 1.75rem))",
+            ? "clamp(1.75rem, 2.5vh, 2.5rem) clamp(3.75rem, 4.5vw, 4.25rem) clamp(1.75rem, 2.5vh, 2.5rem) clamp(1.5rem, 2vw, 2.25rem)"
+            : "clamp(1.75rem, 2.5vh, 2.5rem) clamp(1.5rem, 2vw, 2.25rem) clamp(1.75rem, 2.5vh, 2.5rem) clamp(3.75rem, 4.5vw, 4.25rem)",
           boxSizing: "border-box",
         }}
       >

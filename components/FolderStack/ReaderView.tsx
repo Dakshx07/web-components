@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import gsap from "gsap";
 import { FolderGroupConfig, ArchitectCase } from "./types";
 import { FolderTab } from "./FolderTab";
+import { LeverArch3D } from "./LeverArch3D";
 import { TheFooter } from "./TheFooter";
 import styles from "./FolderStackAnimation.module.css";
 import { soundFx } from "./soundFx";
@@ -32,6 +33,7 @@ interface ReaderViewProps {
   folderStartX?: number;
   folderStartWidth?: number;
   isClosingToStack?: boolean;
+  isFlapOpen?: boolean;
 }
 
 export const ReaderView: React.FC<ReaderViewProps> = ({
@@ -50,6 +52,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   folderStartX = 0,
   folderStartWidth,
   isClosingToStack = false,
+  isFlapOpen = true,
 }) => {
   const contentRef = useRef<HTMLDivElement>(null);
   const leftSheetRef = useRef<HTMLDivElement>(null);
@@ -321,6 +324,7 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
                 className={styles.caseFolderCover}
                 style={{
                   transform: !initialUnfolded ? "rotateY(0deg)" : "rotateY(-180deg)",
+                  zIndex: 10,
                 }}
               >
                 <div
@@ -426,6 +430,12 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
               >
                 {/* Spine Center Crease between Two Flaps */}
                 <div className={styles.caseFolderCenterCrease} />
+
+                {/* 3D Realistic Lever Arch Binder Mechanism */}
+                <LeverArch3D
+                  isClosing={isClosingToStack}
+                  isVisible={isFlapOpen && !isClosingToStack}
+                />
 
                 {/* Vertical Tabs on Right Spine */}
                 <div ref={tagsRef} className={styles.caseFolderTags}>

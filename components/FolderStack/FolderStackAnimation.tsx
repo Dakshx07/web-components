@@ -253,6 +253,7 @@ export const FolderStackAnimation: React.FC = () => {
   const [folderStartDelta, setFolderStartDelta] = useState<number>(420);
   const [folderStartX, setFolderStartX] = useState<number>(0);
   const [folderStartWidth, setFolderStartWidth] = useState<number>(0);
+  const [isFlapOpen, setIsFlapOpen] = useState<boolean>(false);
 
   // Refs for GSAP choreography
   const stackRef = useRef<HTMLDivElement>(null);
@@ -392,12 +393,18 @@ export const FolderStackAnimation: React.FC = () => {
       defaults: { ease: "power3.inOut", duration: 1.5 },
       onComplete: () => {
         setPhase("case-view");
+        setIsFlapOpen(true);
         if (typeof window !== "undefined" && window.__lenis) {
           window.__lenis.resize();
           window.__lenis.start();
         }
       },
     });
+
+    // Smoothly fade in 3D lever mechanism as the flap unfolds flat (at 0.7s of 1.5s)
+    tlEnter.add(() => {
+      setIsFlapOpen(true);
+    }, 0.7);
 
     // 1. Stack: Sibling groups drop down
     const allGroups = Array.from(groupRefs.current.entries());
@@ -535,6 +542,7 @@ export const FolderStackAnimation: React.FC = () => {
   // Close Folder handler: drops scrapbook items and enters closing-to-stack phase
   const handleCloseToStack = () => {
     if (phase !== "case-view") return;
+    setIsFlapOpen(false);
     soundFx.playFolderFlap();
 
     // Instant reset of scroll position to top to guarantee rock-solid coordinate alignment
@@ -728,6 +736,11 @@ export const FolderStackAnimation: React.FC = () => {
       targetCase = maybeCaseIndex;
     }
 
+    if (targetGroup === activeGroupIndex && targetCase === activeCaseIndex) return;
+
+    // Immediately hide the 3D mechanism so it never floats in empty space while flap closes!
+    setIsFlapOpen(false);
+
     soundFx.playPaperRustle();
 
     const isAtBottom = (typeof window !== "undefined" ? window.scrollY : 0) > 300;
@@ -777,6 +790,7 @@ export const FolderStackAnimation: React.FC = () => {
                 }
               },
               onComplete: () => {
+                setIsFlapOpen(true);
                 if (typeof window !== "undefined" && window.__lenis) {
                   window.__lenis.start();
                 }
@@ -849,7 +863,15 @@ export const FolderStackAnimation: React.FC = () => {
 
             const tlEnterNew = gsap.timeline({
               defaults: { duration: 0.7, ease: "power3.inOut" },
+              onComplete: () => {
+                setIsFlapOpen(true);
+              },
             });
+
+            // Fade in 3D lever mechanism as the new flap unfolds flat (at 0.35s of 0.7s)
+            tlEnterNew.add(() => {
+              setIsFlapOpen(true);
+            }, 0.35);
 
             if (newCover) {
               tlEnterNew.fromTo(newCover, { rotateY: 0 }, { rotateY: -180, duration: 0.7 }, 0);
@@ -1048,7 +1070,7 @@ export const FolderStackAnimation: React.FC = () => {
       {/* Reader View Dossier */}
       {phase !== "stack" && (
         <ReaderView
-          key={activeCase.slug}
+          key={activeGroup.groupId}
           group={activeGroup}
           allGroups={FOLDER_GROUPS}
           currentCase={activeCase}
@@ -1066,6 +1088,7 @@ export const FolderStackAnimation: React.FC = () => {
           folderStartX={folderStartX}
           folderStartWidth={folderStartWidth}
           isClosingToStack={phase === "closing-to-stack"}
+          isFlapOpen={isFlapOpen}
         />
       )}
     </div>

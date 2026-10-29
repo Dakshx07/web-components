@@ -1,0 +1,51 @@
+export type BlockType =
+  | "paragraph"
+  | "h1"
+  | "h2"
+  | "h3"
+  | "bullet"
+  | "numbered"
+  | "quote"
+  | "code"
+  | "divider"
+  | "image"
+  | "video";
+
+export interface NotionBlock {
+  id: string;
+  type: BlockType;
+  content: string;
+  caption?: string;
+}
+
+export interface SlashCommandItem {
+  label: string;
+  description: string;
+  command: BlockType;
+  shortcut: string;
+  iconName: string;
+}
+
+export interface CommandPalettePosition {
+  top: number;
+  left: number;
+}
+
+export interface A4Page {
+  id: string;
+  pageNumber: number;
+  title: string;
+  blocks: NotionBlock[];
+}
+
+export interface FlapDocument {
+  flap: "left" | "right";
+  pages: A4Page[];
+}
+
+export interface FolderCaseDocument {
+  slug: string;
+  leftDocument: FlapDocument;
+  rightDocument: FlapDocument;
+}
+

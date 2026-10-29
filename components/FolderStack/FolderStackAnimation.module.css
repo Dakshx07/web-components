@@ -79,10 +79,10 @@
 }
 
 .pageHome.pageCaseActive {
-  height: auto;
-  min-height: 100vh;
-  overflow: visible;
-  justify-content: flex-start;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  justify-content: center;
   display: flex;
 }
 
@@ -549,23 +549,40 @@
    ════════════════════════════════════════════════════════════════ */
 
 .pageCase {
-  align-items: flex-start;
+  --case-spread-height: 870px;
+  --case-flap-width: calc(var(--case-spread-height) / 1.414);
+  --case-spread-width: calc(var(--case-flap-width) * 2);
+  align-items: center;
+  justify-content: center;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
   position: relative;
   width: 100%;
-  background-color: #141414;
+  background-color: #0c0c0d;
   color: #ffffff;
-  overflow-x: hidden;
+}
+
+@media (max-height: 950px), (max-width: 1399px) {
+  .pageCase {
+    --case-spread-height: 720px;
+  }
+}
+
+@media (max-height: 800px), (max-width: 1024px) {
+  .pageCase {
+    --case-spread-height: 620px;
+  }
 }
 
 /* ── Case Hero Title ── */
 .caseHero {
   position: relative;
-  width: var(--container-size);
-  margin: 60px var(--container-offset) 0px;
-  padding: 60px 0px;
+  width: var(--case-spread-width);
+  margin: 0 auto 10px;
+  padding: 0;
   z-index: 50;
   display: flex;
   justify-content: flex-start;
@@ -619,8 +636,8 @@
 
 .caseHeroTitle {
   font-family: var(--font-display-condensed), "Founders Grotesk", Impact, sans-serif;
-  font-size: clamp(3.5rem, 8.33vw, 120px);
-  line-height: 0.85;
+  font-size: clamp(1.75rem, 3.2vw, 44px);
+  line-height: 0.95;
   font-weight: 700;
   text-transform: uppercase;
   color: var(--color-contrast, #fdfaf7);
@@ -657,36 +674,77 @@
   transform: translateY(-1px);
 }
 
-/* ── Case Content Wrapper ── */
+.caseCloseBtn {
+  position: fixed;
+  top: 24px;
+  right: 28px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(20, 20, 20, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1001;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+}
+
+.caseCloseBtn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: scale(1.08);
+}
+
+/* ── Case Content Wrapper (Centers the 2-Flap Folder Spread in Viewport) ── */
 .caseContent {
-  width: var(--container-size);
-  margin: 0 var(--container-offset);
+  width: 100%;
+  margin: 0 auto;
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 0;
-  padding-bottom: 120px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0 20px 0;
   box-sizing: border-box;
 }
 
+.caseSpread {
+  width: var(--case-spread-width);
+  height: var(--case-spread-height);
+  position: relative;
+  display: flex;
+  justify-content: flex-end; /* right half holds caseFolder; left half holds swung cover */
+  transform-style: preserve-3d;
+  perspective: var(--stack-perspective, 3000px);
+}
+
 .caseContentInner {
-  width: var(--case-content-width);
+  width: 100%;
   margin: 0;
   padding: 0;
   position: relative;
   display: flex;
-  flex-direction: column;
+  justify-content: flex-end;
 }
 
-/* ── 3D Case Folder ── */
+/* ── 3D Case Folder (Right Flap) ── */
 .caseFolder {
-  width: 100%;
+  width: 50%;
+  height: 100%;
   position: relative;
   perspective: var(--stack-perspective);
   transform-style: preserve-3d;
   transform-origin: right bottom;
   border-radius: 0 var(--stack-border-radius) var(--stack-border-radius) 0;
   will-change: transform, width, height;
+  flex-shrink: 0;
+  min-width: 0;
 }
 
 /* 3D Flap Cover */
@@ -721,8 +779,17 @@
 
 .caseFolderCoverBack {
   background-color: var(--case-color, #d6231b);
-  transform: rotateX(180deg);
-  overflow: hidden;
+  transform: rotateY(180deg);
+  overflow: visible;
+  box-sizing: border-box;
+  padding: 16px 14px 20px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  border-radius: var(--stack-border-radius, 6px) 0 0 var(--stack-border-radius, 6px);
+  box-shadow: -20px 20px 60px rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
+  height: 100%;
 }
 
 .caseFolderCoverBackOverlay {
@@ -771,14 +838,28 @@
   top: 0;
   transform: translate(100%, -100%) rotate(90deg);
   transform-origin: left bottom;
-  width: 100%;
   z-index: -1;
+}
+
+.caseFolderTags .tag {
+  --tag-height: 1.75rem;
+  height: 1.75rem;
+}
+
+.caseFolderTags .tagMiddle span {
+  font-size: 0.88rem;
+  letter-spacing: 0.02em;
+}
+
+.caseFolderTags .tagStart,
+.caseFolderTags .tagEnd {
+  width: calc(1.75rem * var(--tag-aspect-ratio));
 }
 
 .caseFolderTagsPage {
   display: flex;
-  margin-block-end: -20px;
-  padding-block-end: 20px;
+  margin-block-end: -12px;
+  padding-block-end: 12px;
   position: relative;
   transition: transform 0.325s cubic-bezier(0.33, 1, 0.68, 1);
   cursor: pointer;
@@ -789,7 +870,7 @@
   border-radius: var(--stack-border-radius, 4px) var(--stack-border-radius, 4px) 0 0;
   bottom: -2px;
   content: "";
-  height: 24px;
+  height: 18px;
   left: 0px;
   position: absolute;
   width: 100%;
@@ -803,16 +884,39 @@
 /* ── Folder Inner Background ── */
 .caseFolderInner {
   background-color: var(--case-color, #d6231b);
-  border-radius: 0 0 var(--stack-border-radius) 0;
+  border-radius: 0 var(--stack-border-radius, 6px) var(--stack-border-radius, 6px) 0;
   box-sizing: border-box;
-  padding: var(--container-offset) var(--container-offset) var(--container-offset) 0px;
+  padding: 16px 18px 20px 14px;
   position: relative;
-  min-height: 3000px;
+  height: 100%;
+  min-height: unset;
   width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  align-items: stretch;
+  box-shadow: 20px 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+/* ── Archival A4 Notion Document Wrapper ── */
+.caseFolderA4Container {
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 2;
+  box-sizing: border-box;
+  padding: 0;
+}
+
+@media (max-width: 900px) {
+  .caseFolderInner {
+    padding: 20px 14px 28px 10px;
+  }
+  .caseFolderCoverBack {
+    padding: 20px 10px 28px 14px;
+  }
 }
 
 /* ── Archival Cream Paper Sheet ── */
@@ -1150,6 +1254,8 @@
   width: 100%;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   position: relative;
   will-change: transform;
 }
@@ -1355,4 +1461,149 @@
 
 .caseNextWidgetOverscroll .caseNextActionInner {
   transform: translateX(0px);
+}
+
+/* ── Spine Center Crease between Two Flaps ── */
+.caseFolderCenterCrease {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.28) 0%,
+    rgba(0, 0, 0, 0.05) 50%,
+    rgba(0, 0, 0, 0.28) 100%
+  );
+  z-index: 15;
+  pointer-events: none;
+}
+
+.flapSheetWrapper {
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 2;
+}
+
+/* ── Zoomed-In Dedicated Editor Overlay ── */
+.zoomEditorOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background-color: #fbf9f6;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  padding: 40px 24px 120px;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+.zoomBackFloatingBtn {
+  position: fixed;
+  top: 24px;
+  left: 28px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10001;
+  color: #18181b;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.zoomBackFloatingBtn:hover {
+  background: #f4f4f5;
+  border-color: #2e66f6;
+  color: #2e66f6;
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.zoomFlapIndicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #18181b;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.zoomBackBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #18181b;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.zoomBackBtn:hover {
+  background: #f4f4f5;
+  border-color: #2e66f6;
+  color: #2e66f6;
+  transform: translateY(-1px);
+}
+
+.zoomEscKbd {
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #71717a;
+  background: #f4f4f5;
+  border: 1px solid #e4e4e7;
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-left: 4px;
+}
+
+.zoomFlapIndicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #3f3f46;
+}
+
+.zoomFlapDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.zoomSaveStatus {
+  font-size: 0.8rem;
+  color: #71717a;
+}
+
+.zoomEditorBody {
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
 }

@@ -1,22 +1,111 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { BlockType, CommandPalettePosition } from "./types";
+import { BlockType, CommandPalettePosition, SlashCommandItem } from "./types";
 
-interface CommandItem {
-  label: string;
-  description: string;
+export interface CommandSelectOptions {
   command: BlockType;
-  shortcut: string;
-  renderIcon: () => React.ReactNode;
+  defaultColumns?: 2 | 3;
+  initialType?: BlockType;
+  columnLayoutPreset?: "sidebyside" | "3images" | "3text" | "columns";
 }
 
-const SLASH_COMMANDS: CommandItem[] = [
+const COMMAND_ITEMS: SlashCommandItem[] = [
+  // ── Suggested & Layout ──
+  {
+    label: "2 Columns",
+    description: "Split page into 2 columns side-by-side.",
+    command: "columns",
+    defaultColumns: 2,
+    columnLayoutPreset: "columns",
+    shortcut: "col2",
+    category: "suggested",
+    renderIcon: () => (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="8" height="18" rx="2" />
+        <rect x="13" y="3" width="8" height="18" rx="2" />
+      </svg>
+    ),
+  },
+  {
+    label: "3 Columns",
+    description: "Split page into 3 columns in a row.",
+    command: "columns",
+    defaultColumns: 3,
+    columnLayoutPreset: "columns",
+    shortcut: "col3",
+    category: "suggested",
+    renderIcon: () => (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="3" width="5.5" height="18" rx="1.5" />
+        <rect x="9.25" y="3" width="5.5" height="18" rx="1.5" />
+        <rect x="16.5" y="3" width="5.5" height="18" rx="1.5" />
+      </svg>
+    ),
+  },
+  {
+    label: "Side by Side (Image + Text)",
+    description: "Image on left, formatted text on right.",
+    command: "columns",
+    defaultColumns: 2,
+    initialType: "image",
+    columnLayoutPreset: "sidebyside",
+    shortcut: "side",
+    category: "suggested",
+    renderIcon: () => (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="8" height="18" rx="2" />
+        <line x1="14" y1="7" x2="21" y2="7" />
+        <line x1="14" y1="12" x2="21" y2="12" />
+        <line x1="14" y1="17" x2="19" y2="17" />
+      </svg>
+    ),
+  },
+  {
+    label: "3 Images in a Row",
+    description: "Three image blocks side-by-side.",
+    command: "columns",
+    defaultColumns: 3,
+    initialType: "image",
+    columnLayoutPreset: "3images",
+    shortcut: "3img",
+    category: "suggested",
+    renderIcon: () => (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="4" width="5.5" height="16" rx="1.5" />
+        <rect x="9.25" y="4" width="5.5" height="16" rx="1.5" />
+        <rect x="16.5" y="4" width="5.5" height="16" rx="1.5" />
+      </svg>
+    ),
+  },
+  {
+    label: "3 Text Paras in a Row",
+    description: "Three parallel columns of writing.",
+    command: "columns",
+    defaultColumns: 3,
+    initialType: "paragraph",
+    columnLayoutPreset: "3text",
+    shortcut: "3text",
+    category: "suggested",
+    renderIcon: () => (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="3" y1="6" x2="7" y2="6" />
+        <line x1="3" y1="12" x2="7" y2="12" />
+        <line x1="10" y1="6" x2="14" y2="6" />
+        <line x1="10" y1="12" x2="14" y2="12" />
+        <line x1="17" y1="6" x2="21" y2="6" />
+        <line x1="17" y1="12" x2="21" y2="12" />
+      </svg>
+    ),
+  },
+
+  // ── Basic blocks ──
   {
     label: "Text",
-    description: "Start writing with plain text.",
+    description: "Just start writing with plain text.",
     command: "paragraph",
     shortcut: "text",
+    category: "basic",
     renderIcon: () => (
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="4 7 4 4 20 4 20 7" />
@@ -27,9 +116,10 @@ const SLASH_COMMANDS: CommandItem[] = [
   },
   {
     label: "Heading 1",
-    description: "Big section heading.",
+    description: "Large section title.",
     command: "h1",
     shortcut: "#",
+    category: "basic",
     renderIcon: () => (
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M4 12h8" />
@@ -41,9 +131,10 @@ const SLASH_COMMANDS: CommandItem[] = [
   },
   {
     label: "Heading 2",
-    description: "Medium section heading.",
+    description: "Medium section title.",
     command: "h2",
     shortcut: "##",
+    category: "basic",
     renderIcon: () => (
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M4 12h8" />
@@ -58,6 +149,7 @@ const SLASH_COMMANDS: CommandItem[] = [
     description: "Small section heading.",
     command: "h3",
     shortcut: "###",
+    category: "basic",
     renderIcon: () => (
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M4 12h8" />
@@ -69,10 +161,24 @@ const SLASH_COMMANDS: CommandItem[] = [
     ),
   },
   {
-    label: "Bullet List",
+    label: "To-do list",
+    description: "Track tasks with an interactive checklist.",
+    command: "todo",
+    shortcut: "[]",
+    category: "basic",
+    renderIcon: () => (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="3" />
+        <path d="m9 12 2 2 4-4" />
+      </svg>
+    ),
+  },
+  {
+    label: "Bullet list",
     description: "Create a simple bulleted list.",
     command: "bullet",
     shortcut: "•",
+    category: "basic",
     renderIcon: () => (
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <line x1="8" y1="6" x2="21" y2="6" />
@@ -85,10 +191,11 @@ const SLASH_COMMANDS: CommandItem[] = [
     ),
   },
   {
-    label: "Numbered List",
+    label: "Numbered list",
     description: "Create a list with numbering.",
     command: "numbered",
     shortcut: "1.",
+    category: "basic",
     renderIcon: () => (
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <line x1="10" y1="6" x2="21" y2="6" />
@@ -96,15 +203,15 @@ const SLASH_COMMANDS: CommandItem[] = [
         <line x1="10" y1="18" x2="21" y2="18" />
         <path d="M4 6h1v4" />
         <path d="M4 10h2" />
-        <path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1" />
       </svg>
     ),
   },
   {
     label: "Quote",
-    description: "Capture a quote or callout.",
+    description: "Capture a quote or prominent excerpt.",
     command: "quote",
     shortcut: ">",
+    category: "basic",
     renderIcon: () => (
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z" />
@@ -113,10 +220,35 @@ const SLASH_COMMANDS: CommandItem[] = [
     ),
   },
   {
+    label: "Callout",
+    description: "Make text stand out with icon and tint.",
+    command: "callout",
+    shortcut: "box",
+    category: "basic",
+    renderIcon: () => (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+    ),
+  },
+  {
+    label: "Divider",
+    description: "Visually divide blocks with a clean line.",
+    command: "divider",
+    shortcut: "---",
+    category: "basic",
+    renderIcon: () => (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="4" y1="12" x2="20" y2="12" />
+      </svg>
+    ),
+  },
+  {
     label: "Code",
-    description: "Capture a code snippet.",
+    description: "Capture code with monospace formatting.",
     command: "code",
     shortcut: "```",
+    category: "basic",
     renderIcon: () => (
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="16 18 22 12 16 6" />
@@ -124,22 +256,14 @@ const SLASH_COMMANDS: CommandItem[] = [
       </svg>
     ),
   },
-  {
-    label: "Divider",
-    description: "Visually divide blocks with a line.",
-    command: "divider",
-    shortcut: "---",
-    renderIcon: () => (
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="5" y1="12" x2="19" y2="12" />
-      </svg>
-    ),
-  },
+
+  // ── Media ──
   {
     label: "Image",
-    description: "Upload an image or embed with a link.",
+    description: "Upload an image or embed with link.",
     command: "image",
     shortcut: "img",
+    category: "media",
     renderIcon: () => (
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
@@ -150,9 +274,10 @@ const SLASH_COMMANDS: CommandItem[] = [
   },
   {
     label: "Video",
-    description: "Embed from YouTube, Vimeo, or upload a video.",
+    description: "Embed from YouTube, Vimeo, or upload video.",
     command: "video",
     shortcut: "video",
+    category: "media",
     renderIcon: () => (
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <polygon points="23 7 16 12 23 17 23 7" />
@@ -164,7 +289,7 @@ const SLASH_COMMANDS: CommandItem[] = [
 
 interface CommandPaletteProps {
   isOpen: boolean;
-  onSelectCommand: (command: BlockType) => void;
+  onSelectCommand: (options: CommandSelectOptions) => void;
   onClose: () => void;
   position?: CommandPalettePosition | null;
   searchQuery?: string;
@@ -207,7 +332,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     }
   }, [isOpen]);
 
-  const filtered = SLASH_COMMANDS.filter(
+  const filtered = COMMAND_ITEMS.filter(
     (cmd) =>
       cmd.label.toLowerCase().includes(search.toLowerCase()) ||
       cmd.description.toLowerCase().includes(search.toLowerCase()) ||
@@ -235,7 +360,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         e.preventDefault();
         e.stopPropagation();
         if (filtered.length > 0 && filtered[selectedIndex]) {
-          onSelectCommand(filtered[selectedIndex].command);
+          const item = filtered[selectedIndex];
+          onSelectCommand({
+            command: item.command,
+            defaultColumns: item.defaultColumns,
+            initialType: item.initialType,
+            columnLayoutPreset: item.columnLayoutPreset,
+          });
         }
       } else if (e.key === "Escape") {
         e.preventDefault();
@@ -257,6 +388,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   if (!isOpen) return null;
 
+  // Viewport collision detection
   const style: React.CSSProperties = position
     ? {
         position: "absolute",
@@ -270,36 +402,43 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         transform: "translateX(-50%)",
       };
 
+  // Group by category
+  const suggestedItems = filtered.filter((i) => i.category === "suggested");
+  const basicItems = filtered.filter((i) => i.category === "basic");
+  const mediaItems = filtered.filter((i) => i.category === "media");
+
+  let globalIdx = 0;
+
   return (
     <div
       style={{
         ...style,
-        zIndex: 100,
+        zIndex: 1000,
         width: "320px",
-        borderRadius: "12px",
-        backgroundColor: "rgba(24, 24, 27, 0.96)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
-        border: "1px solid rgba(63, 63, 70, 0.8)",
-        boxShadow: "0 20px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05)",
+        borderRadius: "10px",
+        backgroundColor: "rgba(28, 28, 30, 0.98)",
+        backdropFilter: "blur(24px)",
+        WebkitBackdropFilter: "blur(24px)",
+        border: "1px solid rgba(255, 255, 255, 0.09)",
+        boxShadow: "0 18px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05)",
         overflow: "hidden",
         color: "#f4f4f5",
         fontFamily: "var(--font-inter, sans-serif)",
       }}
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Header Search Input */}
+      {/* Search Header */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
           gap: "8px",
-          padding: "10px 14px",
-          borderBottom: "1px solid rgba(63, 63, 70, 0.6)",
-          backgroundColor: "rgba(39, 39, 42, 0.4)",
+          padding: "8px 12px",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.07)",
+          backgroundColor: "rgba(40, 40, 44, 0.5)",
         }}
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" strokeWidth="2">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" strokeWidth="2">
           <circle cx="11" cy="11" r="8" />
           <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
@@ -311,25 +450,25 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             setSearch(e.target.value);
             setSelectedIndex(0);
           }}
-          placeholder="Filter commands or type..."
+          placeholder="Type to filter..."
           style={{
             width: "100%",
             backgroundColor: "transparent",
             border: "none",
             outline: "none",
             color: "#f4f4f5",
-            fontSize: "0.82rem",
+            fontSize: "0.8rem",
             padding: 0,
           }}
         />
         <span
           style={{
-            fontSize: "0.68rem",
+            fontSize: "0.65rem",
             color: "#a1a1aa",
             fontFamily: "monospace",
-            backgroundColor: "rgba(63, 63, 70, 0.8)",
-            padding: "2px 6px",
-            borderRadius: "4px",
+            backgroundColor: "rgba(60, 60, 65, 0.7)",
+            padding: "2px 5px",
+            borderRadius: "3px",
           }}
         >
           ESC
@@ -340,105 +479,239 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       <div
         ref={listRef}
         style={{
-          maxHeight: "260px",
+          maxHeight: "280px",
           overflowY: "auto",
           padding: "4px",
         }}
       >
-        <div
-          style={{
-            padding: "6px 10px",
-            fontSize: "0.68rem",
-            fontWeight: 700,
-            textTransform: "uppercase",
-            letterSpacing: "0.08em",
-            color: "#71717a",
-          }}
-        >
-          Basic Blocks
-        </div>
-
         {filtered.length === 0 ? (
-          <div style={{ padding: "24px 12px", textAlign: "center", fontSize: "0.82rem", color: "#71717a" }}>
-            No matching commands found
+          <div style={{ padding: "20px 12px", textAlign: "center", fontSize: "0.8rem", color: "#71717a" }}>
+            No matching blocks
           </div>
         ) : (
-          filtered.map((cmd, index) => {
-            const isSelected = index === selectedIndex;
-            return (
-              <button
-                key={cmd.command}
-                ref={(el) => {
-                  itemRefs.current[index] = el;
-                }}
-                type="button"
-                onMouseEnter={() => setSelectedIndex(index)}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onSelectCommand(cmd.command);
-                }}
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  padding: "8px 10px",
-                  borderRadius: "8px",
-                  textAlign: "left",
-                  border: "none",
-                  backgroundColor: isSelected ? "rgba(63, 63, 70, 0.8)" : "transparent",
-                  color: isSelected ? "#ffffff" : "#d4d4d8",
-                  cursor: "pointer",
-                  transition: "background-color 0.1s ease",
-                }}
-              >
-                <div
-                  style={{
-                    width: "28px",
-                    height: "28px",
-                    borderRadius: "6px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    backgroundColor: isSelected ? "rgba(82, 82, 91, 0.9)" : "rgba(39, 39, 42, 0.7)",
-                    border: "1px solid rgba(63, 63, 70, 0.6)",
-                    color: isSelected ? "#ffffff" : "#a1a1aa",
-                    flexShrink: 0,
-                  }}
-                >
-                  {cmd.renderIcon()}
+          <>
+            {/* Suggested / Layout Section */}
+            {suggestedItems.length > 0 && (
+              <div>
+                <div style={{ padding: "6px 8px 3px 8px", fontSize: "0.68rem", fontWeight: 600, color: "#8e8e93" }}>
+                  Suggested
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: "0.82rem", fontWeight: 600 }}>{cmd.label}</div>
-                  <div style={{ fontSize: "0.72rem", color: "#a1a1aa", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {cmd.description}
-                  </div>
+                {suggestedItems.map((cmd) => {
+                  const currentIdx = globalIdx++;
+                  const isSelected = currentIdx === selectedIndex;
+                  return (
+                    <button
+                      key={cmd.label}
+                      ref={(el) => {
+                        itemRefs.current[currentIdx] = el;
+                      }}
+                      type="button"
+                      onMouseEnter={() => setSelectedIndex(currentIdx)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onSelectCommand({
+                          command: cmd.command,
+                          defaultColumns: cmd.defaultColumns,
+                          initialType: cmd.initialType,
+                          columnLayoutPreset: cmd.columnLayoutPreset,
+                        });
+                      }}
+                      style={{
+                        width: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        padding: "6px 8px",
+                        borderRadius: "6px",
+                        textAlign: "left",
+                        border: "none",
+                        backgroundColor: isSelected ? "rgba(255, 255, 255, 0.08)" : "transparent",
+                        color: isSelected ? "#ffffff" : "#d4d4d8",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "24px",
+                          height: "24px",
+                          borderRadius: "4px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor: isSelected ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.05)",
+                          color: isSelected ? "#ffffff" : "#a1a1aa",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {cmd.renderIcon()}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: "0.8rem", fontWeight: 500 }}>{cmd.label}</div>
+                      </div>
+                      <div style={{ fontSize: "0.68rem", fontFamily: "monospace", color: "#71717a" }}>
+                        {cmd.shortcut}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Basic Blocks Section */}
+            {basicItems.length > 0 && (
+              <div style={{ marginTop: suggestedItems.length > 0 ? "6px" : 0 }}>
+                <div style={{ padding: "6px 8px 3px 8px", fontSize: "0.68rem", fontWeight: 600, color: "#8e8e93" }}>
+                  Basic blocks
                 </div>
-                <div style={{ fontSize: "0.72rem", fontFamily: "monospace", color: "#71717a", flexShrink: 0 }}>
-                  {cmd.shortcut}
+                {basicItems.map((cmd) => {
+                  const currentIdx = globalIdx++;
+                  const isSelected = currentIdx === selectedIndex;
+                  return (
+                    <button
+                      key={cmd.label}
+                      ref={(el) => {
+                        itemRefs.current[currentIdx] = el;
+                      }}
+                      type="button"
+                      onMouseEnter={() => setSelectedIndex(currentIdx)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onSelectCommand({
+                          command: cmd.command,
+                          defaultColumns: cmd.defaultColumns,
+                          initialType: cmd.initialType,
+                          columnLayoutPreset: cmd.columnLayoutPreset,
+                        });
+                      }}
+                      style={{
+                        width: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        padding: "6px 8px",
+                        borderRadius: "6px",
+                        textAlign: "left",
+                        border: "none",
+                        backgroundColor: isSelected ? "rgba(255, 255, 255, 0.08)" : "transparent",
+                        color: isSelected ? "#ffffff" : "#d4d4d8",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "24px",
+                          height: "24px",
+                          borderRadius: "4px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor: isSelected ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.05)",
+                          color: isSelected ? "#ffffff" : "#a1a1aa",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {cmd.renderIcon()}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: "0.8rem", fontWeight: 500 }}>{cmd.label}</div>
+                      </div>
+                      <div style={{ fontSize: "0.68rem", fontFamily: "monospace", color: "#71717a" }}>
+                        {cmd.shortcut}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Media Section */}
+            {mediaItems.length > 0 && (
+              <div style={{ marginTop: "6px" }}>
+                <div style={{ padding: "6px 8px 3px 8px", fontSize: "0.68rem", fontWeight: 600, color: "#8e8e93" }}>
+                  Media
                 </div>
-              </button>
-            );
-          })
+                {mediaItems.map((cmd) => {
+                  const currentIdx = globalIdx++;
+                  const isSelected = currentIdx === selectedIndex;
+                  return (
+                    <button
+                      key={cmd.label}
+                      ref={(el) => {
+                        itemRefs.current[currentIdx] = el;
+                      }}
+                      type="button"
+                      onMouseEnter={() => setSelectedIndex(currentIdx)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onSelectCommand({
+                          command: cmd.command,
+                          defaultColumns: cmd.defaultColumns,
+                          initialType: cmd.initialType,
+                          columnLayoutPreset: cmd.columnLayoutPreset,
+                        });
+                      }}
+                      style={{
+                        width: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        padding: "6px 8px",
+                        borderRadius: "6px",
+                        textAlign: "left",
+                        border: "none",
+                        backgroundColor: isSelected ? "rgba(255, 255, 255, 0.08)" : "transparent",
+                        color: isSelected ? "#ffffff" : "#d4d4d8",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "24px",
+                          height: "24px",
+                          borderRadius: "4px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor: isSelected ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.05)",
+                          color: isSelected ? "#ffffff" : "#a1a1aa",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {cmd.renderIcon()}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: "0.8rem", fontWeight: 500 }}>{cmd.label}</div>
+                      </div>
+                      <div style={{ fontSize: "0.68rem", fontFamily: "monospace", color: "#71717a" }}>
+                        {cmd.shortcut}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* Footer Navigation Hints */}
+      {/* Notion Pinned Footer */}
       <div
         style={{
           padding: "6px 12px",
-          borderTop: "1px solid rgba(63, 63, 70, 0.6)",
-          backgroundColor: "rgba(24, 24, 27, 0.6)",
+          borderTop: "1px solid rgba(255, 255, 255, 0.07)",
+          backgroundColor: "rgba(22, 22, 24, 0.7)",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           fontSize: "0.68rem",
-          color: "#71717a",
+          color: "#8e8e93",
         }}
       >
-        <span>Use ↑↓ to navigate</span>
-        <span>↵ to select</span>
+        <span>Close menu</span>
+        <span style={{ fontFamily: "monospace", fontSize: "0.62rem" }}>esc</span>
       </div>
     </div>
   );

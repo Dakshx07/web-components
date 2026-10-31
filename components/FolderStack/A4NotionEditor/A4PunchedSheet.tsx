@@ -9,12 +9,15 @@ interface A4PunchedSheetProps {
   punchEdge?: "left" | "right";
   isHovered?: boolean;
   onClick?: () => void;
+  pageNumber?: number;
+  onScroll?: React.UIEventHandler<HTMLDivElement>;
 }
 
 /**
- * Archival A4 Document Sheet with Balanced Punched Holes along spine margin
+ * Archival A4 Document Sheet with Slim Balanced Punched Holes along spine margin
  * - punchEdge="right" for Left Flap pages (facing center spine)
  * - punchEdge="left" for Right Flap pages (facing center spine)
+ * - Slimmed punch strip gives ~40px extra width for Notion-style editing canvas
  */
 export const A4PunchedSheet: React.FC<A4PunchedSheetProps> = ({
   children,
@@ -23,6 +26,7 @@ export const A4PunchedSheet: React.FC<A4PunchedSheetProps> = ({
   punchEdge = "left",
   isHovered = false,
   onClick,
+  onScroll,
 }) => {
   const isRightPunch = punchEdge === "right";
 
@@ -30,11 +34,12 @@ export const A4PunchedSheet: React.FC<A4PunchedSheetProps> = ({
     <div
       className={className}
       onClick={onClick}
+      onScroll={onScroll}
       style={{
         position: "relative",
         width: "100%",
-        minHeight: style?.height === "100%" ? "unset" : (style?.minHeight ?? "1000px"),
-        height: style?.height ?? "auto",
+        minHeight: style?.height === "100%" ? "100%" : (style?.minHeight ?? "1140px"),
+        height: style?.height ?? (style?.minHeight ? "auto" : "100%"),
         flex: style?.flex ?? 1,
         backgroundColor: "#FFFFFF",
         borderRadius: "4px",
@@ -46,26 +51,28 @@ export const A4PunchedSheet: React.FC<A4PunchedSheetProps> = ({
         color: "#18181b",
         fontFamily: "var(--font-inter, sans-serif)",
         display: "flex",
+        overflow: style?.overflow || "clip",
         transition: "box-shadow 0.25s ease, border-color 0.25s ease, transform 0.25s ease",
         ...style,
       }}
     >
-      {/* ── Spine Binder Strip with Balanced Punched Holes ── */}
+      {/* ── Slim Spine Binder Strip with Balanced Punched Holes ── */}
       <div
         style={{
           position: "absolute",
           ...(isRightPunch ? { right: 0 } : { left: 0 }),
           top: 0,
           bottom: 0,
-          width: "clamp(3.25rem, 4.5vw, 4.25rem)",
+          height: "100%",
+          width: "2.35rem",
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-evenly",
           alignItems: "center",
-          padding: "clamp(1.5rem, 3.5vh, 3.5rem) 0",
+          padding: "clamp(1.5rem, 3vh, 2.75rem) 0",
           ...(isRightPunch
-            ? { borderLeft: "1px solid rgba(0, 0, 0, 0.08)" }
-            : { borderRight: "1px solid rgba(0, 0, 0, 0.08)" }),
+            ? { borderLeft: "1px solid rgba(0, 0, 0, 0.07)" }
+            : { borderRight: "1px solid rgba(0, 0, 0, 0.07)" }),
           pointerEvents: "none",
           zIndex: 5,
         }}
@@ -74,26 +81,28 @@ export const A4PunchedSheet: React.FC<A4PunchedSheetProps> = ({
           <div
             key={n}
             style={{
-              width: "12px",
-              height: "12px",
+              width: "9px",
+              height: "9px",
               borderRadius: "50%",
               backgroundColor: "var(--case-color, #194bfd)",
               boxShadow:
-                "inset 0 2px 4px rgba(0, 0, 0, 0.65), inset 0 1px 1px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.8)",
+                "inset 0 1.5px 3px rgba(0, 0, 0, 0.65), inset 0 0.5px 0.5px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.8)",
               border: "1px solid rgba(0, 0, 0, 0.25)",
             }}
           />
         ))}
       </div>
 
-      {/* ── Sheet Content Canvas (generous padding clearing the punch strip) ── */}
+      {/* ── Sheet Content Canvas (optimized padding maximizing reading/writing space) ── */}
       <div
         style={{
           flex: 1,
           minWidth: 0,
+          display: "flex",
+          flexDirection: "column",
           padding: isRightPunch
-            ? "clamp(1.75rem, 2.5vh, 3rem) calc(clamp(3.25rem, 4.5vw, 4.25rem) + clamp(1rem, 1.5vw, 1.75rem)) clamp(1.75rem, 2.5vh, 3rem) clamp(1.75rem, 2vw, 3rem)"
-            : "clamp(1.75rem, 2.5vh, 3rem) clamp(1.75rem, 2vw, 3rem) clamp(1.75rem, 2.5vh, 3rem) calc(clamp(3.25rem, 4.5vw, 4.25rem) + clamp(1rem, 1.5vw, 1.75rem))",
+            ? "clamp(1.75rem, 2.5vh, 2.75rem) calc(2.35rem + clamp(0.75rem, 1.2vw, 1.25rem)) clamp(1.75rem, 2.5vh, 2.75rem) clamp(1.5rem, 2vw, 2.5rem)"
+            : "clamp(1.75rem, 2.5vh, 2.75rem) clamp(1.5rem, 2vw, 2.5rem) clamp(1.75rem, 2.5vh, 2.75rem) calc(2.35rem + clamp(0.75rem, 1.2vw, 1.25rem))",
           boxSizing: "border-box",
         }}
       >

@@ -1,26 +1,46 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { compressImageDataUrl } from "./documentStore";
 
 interface ImageBlockProps {
   content: string;
   caption?: string;
+  widthPercentage?: number;
+  alignment?: "left" | "center" | "right";
   onChangeContent: (url: string) => void;
   onChangeCaption: (caption: string) => void;
+  onChangeWidth?: (width: number) => void;
+  onChangeAlignment?: (alignment: "left" | "center" | "right") => void;
   onDelete: () => void;
 }
 
 export const ImageBlock: React.FC<ImageBlockProps> = ({
   content,
   caption = "",
+  widthPercentage = 100,
+  alignment = "center",
   onChangeContent,
   onChangeCaption,
+  onChangeWidth,
+  onChangeAlignment,
   onDelete,
 }) => {
   const [activeTab, setActiveTab] = useState<"upload" | "embed">("upload");
   const [urlInput, setUrlInput] = useState(content);
   const [isEditing, setIsEditing] = useState(!content);
+  const [isHovered, setIsHovered] = useState(false);
+  const [currentWidth, setCurrentWidth] = useState(widthPercentage);
+  const [isDragging, setIsDragging] = useState<"left" | "right" | null>(null);
+
+  useEffect(() => {
+    setCurrentWidth(widthPercentage);
+  }, [widthPercentage]);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dragStartX = useRef<number>(0);
+  const dragStartWidth = useRef<number>(widthPercentage);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -31,21 +51,55 @@ export const ImageBlock: React.FC<ImageBlockProps> = ({
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      onChangeContent(dataUrl);
-      setUrlInput(dataUrl);
+    compressImageDataUrl(file).then((compressed) => {
+      onChangeContent(compressed);
+      setUrlInput(compressed);
       setIsEditing(false);
-    };
-    reader.readAsDataURL(file);
+    });
   };
 
   const handleEmbedSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!urlInput.trim()) return;
-    onChangeContent(urlInput.trim());
-    setIsEditing(false);
+    compressImageDataUrl(urlInput.trim()).then((compressed) => {
+      onChangeContent(compressed);
+      setIsEditing(false);
+    });
+  };
+
+  // Draggable vertical sidebar handles (||)
+  const handleMouseDown = (e: React.MouseEvent, side: "left" | "right") => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(side);
+    dragStartX.current = e.clientX;
+    dragStartWidth.current = currentWidth;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!containerRef.current?.parentElement) return;
+      const parentWidth = containerRef.current.parentElement.getBoundingClientRect().width;
+      const deltaX = moveEvent.clientX - dragStartX.current;
+      const deltaPercentage = (deltaX / parentWidth) * 100;
+
+      let newWidth = side === "right"
+        ? dragStartWidth.current + deltaPercentage
+        : dragStartWidth.current - deltaPercentage;
+
+      newWidth = Math.max(25, Math.min(100, Math.round(newWidth)));
+      setCurrentWidth(newWidth);
+      if (onChangeWidth) {
+        onChangeWidth(newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(null);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
   };
 
   if (!content || isEditing) {
@@ -62,7 +116,6 @@ export const ImageBlock: React.FC<ImageBlockProps> = ({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Tabs */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
           <div style={{ display: "flex", gap: "6px" }}>
             <button
@@ -78,16 +131,8 @@ export const ImageBlock: React.FC<ImageBlockProps> = ({
                 color: activeTab === "upload" ? "#18181b" : "#71717a",
                 boxShadow: activeTab === "upload" ? "0 1px 3px rgba(0, 0, 0, 0.1)" : "none",
                 cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
               }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="17 8 12 3 7 8" />
-                <line x1="12" y1="3" x2="12" y2="15" />
-              </svg>
               Upload
             </button>
             <button
@@ -103,103 +148,78 @@ export const ImageBlock: React.FC<ImageBlockProps> = ({
                 color: activeTab === "embed" ? "#18181b" : "#71717a",
                 boxShadow: activeTab === "embed" ? "0 1px 3px rgba(0, 0, 0, 0.1)" : "none",
                 cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
               }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-              </svg>
-              Embed Link
+              Embed link
             </button>
           </div>
-
           <button
             type="button"
             onClick={onDelete}
             style={{
-              background: "none",
+              padding: "4px 8px",
+              fontSize: "0.75rem",
+              borderRadius: "4px",
               border: "none",
+              backgroundColor: "transparent",
               color: "#a1a1aa",
               cursor: "pointer",
-              padding: "4px",
-              display: "flex",
-              alignItems: "center",
             }}
-            title="Delete block"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            Cancel
           </button>
         </div>
 
-        {/* Tab 1: Upload */}
         {activeTab === "upload" && (
-          <div>
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            style={{
+              border: "2px dashed rgba(0, 0, 0, 0.12)",
+              borderRadius: "8px",
+              padding: "28px 16px",
+              textAlign: "center",
+              cursor: "pointer",
+              backgroundColor: "#ffffff",
+            }}
+          >
             <input
               ref={fileInputRef}
               type="file"
               accept="image/*"
-              onChange={handleFileUpload}
               style={{ display: "none" }}
+              onChange={handleFileUpload}
             />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              style={{
-                width: "100%",
-                padding: "24px 16px",
-                backgroundColor: "#ffffff",
-                border: "1px dashed rgba(0, 0, 0, 0.15)",
-                borderRadius: "6px",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: "8px",
-                cursor: "pointer",
-              }}
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#71717a" strokeWidth="1.8">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <polyline points="21 15 16 10 5 21" />
-              </svg>
-              <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#18181b" }}>
-                Choose an image or drop file here
-              </span>
-              <span style={{ fontSize: "0.74rem", color: "#71717a" }}>Supports JPG, PNG, GIF, WebP</span>
-            </button>
+            <div style={{ fontSize: "0.88rem", fontWeight: 600, color: "#18181b", marginBottom: "4px" }}>
+              Upload an image
+            </div>
+            <div style={{ fontSize: "0.78rem", color: "#71717a" }}>
+              Click to choose a file (PNG, JPG, SVG, WebP)
+            </div>
           </div>
         )}
 
-        {/* Tab 2: Embed Link */}
         {activeTab === "embed" && (
           <form onSubmit={handleEmbedSubmit} style={{ display: "flex", gap: "8px" }}>
             <input
               type="url"
               value={urlInput}
               onChange={(e) => setUrlInput(e.target.value)}
-              placeholder="Paste an image link (e.g. https://...)"
+              placeholder="Paste image link..."
               style={{
                 flex: 1,
                 padding: "8px 12px",
-                fontSize: "0.84rem",
+                fontSize: "0.85rem",
                 borderRadius: "6px",
                 border: "1px solid rgba(0, 0, 0, 0.15)",
-                outline: "none",
                 backgroundColor: "#ffffff",
-                color: "#18181b",
+                outline: "none",
               }}
             />
             <button
               type="submit"
               style={{
                 padding: "8px 16px",
-                fontSize: "0.84rem",
+                fontSize: "0.85rem",
                 fontWeight: 600,
                 borderRadius: "6px",
                 border: "none",
@@ -208,7 +228,7 @@ export const ImageBlock: React.FC<ImageBlockProps> = ({
                 cursor: "pointer",
               }}
             >
-              Embed Image
+              Embed
             </button>
           </form>
         )}
@@ -216,115 +236,231 @@ export const ImageBlock: React.FC<ImageBlockProps> = ({
     );
   }
 
-  // Rendered Image View
+  const alignmentStyle: React.CSSProperties = {
+    display: "flex",
+    flexDirection: "column",
+    width: "100%",
+    alignItems: alignment === "left" ? "flex-start" : alignment === "right" ? "flex-end" : "center",
+  };
+
   return (
     <div
-      style={{
-        position: "relative",
-        width: "100%",
-        margin: "12px 0",
+      style={alignmentStyle}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => {
+        if (!isDragging) setIsHovered(false);
       }}
-      className="group"
     >
       <div
+        ref={containerRef}
         style={{
           position: "relative",
-          width: "100%",
-          borderRadius: "8px",
-          overflow: "hidden",
-          border: "1px solid rgba(0, 0, 0, 0.08)",
-          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)",
-          backgroundColor: "#f4f4f5",
+          width: `${currentWidth}%`,
+          maxWidth: "100%",
+          margin: "6px 0",
+          borderRadius: "6px",
+          transition: isDragging ? "none" : "width 0.15s ease",
         }}
       >
+        {/* Image Display */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={content}
-          alt={caption || "Document image"}
+          alt={caption || "Archival image"}
           style={{
-            display: "block",
             width: "100%",
-            maxHeight: "560px",
-            objectFit: "contain",
-            backgroundColor: "#fafafa",
+            height: "auto",
+            display: "block",
+            borderRadius: "6px",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
           }}
         />
 
-        {/* Floating Top-Right Action Controls */}
-        <div
-          style={{
-            position: "absolute",
-            top: "10px",
-            right: "10px",
-            display: "flex",
-            gap: "6px",
-            backgroundColor: "rgba(24, 24, 27, 0.8)",
-            backdropFilter: "blur(8px)",
-            padding: "4px 8px",
-            borderRadius: "6px",
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => setIsEditing(true)}
+        {/* ── Left Draggable Vertical Resize Handle (||) ── */}
+        {(isHovered || isDragging) && (
+          <div
+            onMouseDown={(e) => handleMouseDown(e, "left")}
+            title="Drag to resize width"
             style={{
-              background: "none",
-              border: "none",
+              position: "absolute",
+              left: "-12px",
+              top: "50%",
+              transform: "translateY(-50%)",
+              width: "12px",
+              height: "44px",
+              cursor: "ew-resize",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 20,
+            }}
+          >
+            <div
+              style={{
+                width: "6px",
+                height: "36px",
+                borderRadius: "4px",
+                backgroundColor: "#ffffff",
+                boxShadow: "0 1px 4px rgba(0, 0, 0, 0.35)",
+                border: "1px solid rgba(0, 0, 0, 0.12)",
+              }}
+            />
+          </div>
+        )}
+
+        {/* ── Right Draggable Vertical Resize Handle (||) ── */}
+        {(isHovered || isDragging) && (
+          <div
+            onMouseDown={(e) => handleMouseDown(e, "right")}
+            title="Drag to resize width"
+            style={{
+              position: "absolute",
+              right: "-12px",
+              top: "50%",
+              transform: "translateY(-50%)",
+              width: "12px",
+              height: "44px",
+              cursor: "ew-resize",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 20,
+            }}
+          >
+            <div
+              style={{
+                width: "6px",
+                height: "36px",
+                borderRadius: "4px",
+                backgroundColor: "#ffffff",
+                boxShadow: "0 1px 4px rgba(0, 0, 0, 0.35)",
+                border: "1px solid rgba(0, 0, 0, 0.12)",
+              }}
+            />
+          </div>
+        )}
+
+        {/* ── Top Hover Floating Action Toolbar (Notion Style) ── */}
+        {isHovered && (
+          <div
+            style={{
+              position: "absolute",
+              top: "8px",
+              right: "8px",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              padding: "3px 6px",
+              borderRadius: "6px",
+              backgroundColor: "rgba(24, 24, 27, 0.85)",
+              backdropFilter: "blur(12px)",
               color: "#f4f4f5",
-              fontSize: "0.72rem",
-              fontWeight: 500,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
+              zIndex: 25,
             }}
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-            </svg>
-            Replace
-          </button>
-          <span style={{ color: "#71717a" }}>|</span>
-          <button
-            type="button"
-            onClick={onDelete}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#ef4444",
-              fontSize: "0.72rem",
-              fontWeight: 500,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
-            }}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="3 6 5 6 21 6" />
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-            </svg>
-            Delete
-          </button>
-        </div>
+            {/* Alignment Cycle */}
+            <button
+              type="button"
+              onClick={() => {
+                const nextAlign = alignment === "center" ? "left" : alignment === "left" ? "right" : "center";
+                if (onChangeAlignment) onChangeAlignment(nextAlign);
+              }}
+              title="Change alignment"
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "#e4e4e7",
+                padding: "3px 6px",
+                borderRadius: "4px",
+                fontSize: "0.72rem",
+                cursor: "pointer",
+              }}
+            >
+              {alignment === "left" ? "Left" : alignment === "right" ? "Right" : "Center"}
+            </button>
+
+            {/* Quick Width Presets */}
+            <div style={{ display: "flex", gap: "2px", borderLeft: "1px solid rgba(255,255,255,0.2)", paddingLeft: "4px" }}>
+              {[25, 50, 75, 100].map((w) => (
+                <button
+                  key={w}
+                  type="button"
+                  onClick={() => {
+                    setCurrentWidth(w);
+                    if (onChangeWidth) onChangeWidth(w);
+                  }}
+                  title={`Resize to ${w}% width`}
+                  style={{
+                    background: currentWidth === w ? "rgba(255,255,255,0.25)" : "transparent",
+                    border: "none",
+                    color: "#e4e4e7",
+                    padding: "2px 5px",
+                    borderRadius: "3px",
+                    fontSize: "0.7rem",
+                    cursor: "pointer",
+                    fontWeight: currentWidth === w ? 700 : 400,
+                  }}
+                >
+                  {w}%
+                </button>
+              ))}
+            </div>
+
+            {/* Replace */}
+            <button
+              type="button"
+              onClick={() => setIsEditing(true)}
+              title="Replace image"
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "#e4e4e7",
+                padding: "3px 6px",
+                borderRadius: "4px",
+                fontSize: "0.72rem",
+                cursor: "pointer",
+              }}
+            >
+              Replace
+            </button>
+
+            {/* Delete */}
+            <button
+              type="button"
+              onClick={onDelete}
+              title="Delete block"
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "#f87171",
+                padding: "3px 6px",
+                borderRadius: "4px",
+                fontSize: "0.72rem",
+                cursor: "pointer",
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Caption Field */}
+      {/* Caption Input */}
       <input
         type="text"
         value={caption}
         onChange={(e) => onChangeCaption(e.target.value)}
-        placeholder="Type a caption... (optional)"
+        placeholder="Add a caption..."
         style={{
-          width: "100%",
+          width: `${currentWidth}%`,
+          maxWidth: "100%",
+          backgroundColor: "transparent",
           border: "none",
           outline: "none",
-          backgroundColor: "transparent",
-          fontSize: "0.8rem",
+          fontSize: "0.78rem",
           color: "#71717a",
-          textAlign: "center",
-          marginTop: "6px",
+          textAlign: alignment,
+          marginTop: "4px",
           fontFamily: "inherit",
         }}
       />

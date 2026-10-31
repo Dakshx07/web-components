@@ -828,50 +828,37 @@ export const FolderStackAnimation: React.FC = () => {
         tlNextLeave.to(items, { y: "-30vh", opacity: 0, duration: 0.25, ease: "power1.in" }, 0);
       }
     } else {
-      // ── page-turn: In-group Sibling Tag Switch (Mosby Pct + Kct) ──
+      // ── page-turn: Seamless Sibling Case Switch (glitch-free paper transition) ──
       const tlTurn = gsap.timeline({
-        defaults: { duration: 0.55, ease: "power3.out" },
+        defaults: { duration: 0.4, ease: "power2.inOut" },
         onStart: () => {
           if (typeof window !== "undefined" && window.__lenis) {
-            window.__lenis.scrollTo(0, { duration: 0.55, force: true });
+            window.__lenis.scrollTo(0, { duration: 0.4, force: true });
           } else {
             window.scrollTo({ top: 0, behavior: "instant" });
           }
         },
-        onComplete: () => {
-          setActiveGroupIndex(targetGroup);
-          setActiveCaseIndex(targetCase);
-
-          setTimeout(() => {
-            const newCover = caseCoverRef.current;
-            const newChars = caseHeroTitleRef.current ? caseHeroTitleRef.current.querySelectorAll(".case-char") : [];
-            const newItems = document.querySelectorAll(`.${styles.scrapbookItemDraggable}`);
-
-            const tlEnterNew = gsap.timeline({
-              defaults: { duration: 0.7, ease: "power3.inOut" },
-            });
-
-            if (newCover) {
-              tlEnterNew.fromTo(newCover, { rotateY: 0 }, { rotateY: -180, duration: 0.7 }, 0);
-            }
-            if (newChars.length > 0) {
-              tlEnterNew.from(newChars, { xPercent: 150, opacity: 0, duration: 0.5, stagger: -0.025, ease: "power2.out" }, 0.15);
-            }
-            if (newItems.length > 0) {
-              tlEnterNew.from(newItems, { y: "50vh", duration: 0.5, ease: "power3.out", stagger: 0.04, clearProps: "y" }, 0.3);
-            }
-          }, 40);
-        },
       });
 
-      if (items.length > 0) {
-        tlTurn.to(items, { y: "50vh", duration: 0.25, ease: "power2.in" }, 0);
+      const sheets = document.querySelectorAll(`.${styles.caseFolderCoverBack}, .${styles.caseFolderA4Container}`);
+      if (sheets.length > 0) {
+        tlTurn.to(sheets, { opacity: 0.15, scale: 0.98, duration: 0.18, ease: "power2.in" }, 0);
       }
       if (chars.length > 0) {
-        tlTurn.to(chars, { xPercent: 150, opacity: 0, duration: 0.45, stagger: 0.02, ease: "power2.in" }, 0.1);
+        tlTurn.to(chars, { yPercent: 40, opacity: 0, duration: 0.18, stagger: 0.01, ease: "power2.in" }, 0);
       }
-      if (cover) {
-        tlTurn.fromTo(cover, { rotateY: -180 }, { rotateY: 0, duration: 0.55, ease: "power3.inOut" }, 0.1);
+
+      tlTurn.add(() => {
+        setActiveGroupIndex(targetGroup);
+        setActiveCaseIndex(targetCase);
+      });
+
+      if (sheets.length > 0) {
+        tlTurn.fromTo(
+          sheets,
+          { opacity: 0.15, scale: 0.98 },
+          { opacity: 1, scale: 1, duration: 0.3, ease: "power2.out", clearProps: "all" }
+        );
       }
     }
   };

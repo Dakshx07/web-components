@@ -141,7 +141,7 @@ export function saveFolderCaseDocument(doc: FolderCaseDocument): void {
     const all = raw ? JSON.parse(raw) : {};
     all[doc.slug] = doc;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
-  } catch (e) {
+  } catch {
     // If quota exceeded, attempt to prune old entries
     try {
       const cleanAll: Record<string, FolderCaseDocument> = {};

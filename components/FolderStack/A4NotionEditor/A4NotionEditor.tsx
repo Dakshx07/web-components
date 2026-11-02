@@ -78,7 +78,7 @@ function getBlockEstimatedHeight(block: NotionBlock): number {
 export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
   initialTitle = "Project Documentation",
   initialBlocks = DEFAULT_BLOCKS,
-  folderCategory = "ARCHIVE",
+  folderCategory: _folderCategory = "ARCHIVE",
   themeColor = "#194bfd",
   className,
   punchEdge = "left",
@@ -1099,7 +1099,7 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
     }
   };
 
-  const handleAddNewPage = () => {
+  const _handleAddNewPage = () => {
     const newPageNum = activePages.length + 1;
     const newPage: A4Page = {
       id: generateUniqueId("page"),

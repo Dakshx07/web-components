@@ -807,7 +807,7 @@ export const ColumnLayoutBlock: React.FC<ColumnLayoutBlockProps> = ({
                       onUpdateColumnBlockAlignment(col.id, block.id, a)
                     }
                     onDelete={() => onDeleteBlockInColumn(col.id, block.id)}
-                    onDragStart={(e) => {
+                    onDragStart={(_e) => {
                       if (onDragStartBlock) onDragStartBlock(block.id, col.id);
                     }}
                     onDragEnd={onDragEndBlock}
@@ -835,7 +835,7 @@ export const ColumnLayoutBlock: React.FC<ColumnLayoutBlockProps> = ({
                       onUpdateColumnBlockAlignment(col.id, block.id, a)
                     }
                     onDelete={() => onDeleteBlockInColumn(col.id, block.id)}
-                    onDragStart={(e) => {
+                    onDragStart={(_e) => {
                       if (onDragStartBlock) onDragStartBlock(block.id, col.id);
                     }}
                     onDragEnd={onDragEndBlock}

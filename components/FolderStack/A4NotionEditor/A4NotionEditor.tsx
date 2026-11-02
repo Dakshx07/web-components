@@ -7,6 +7,7 @@ import { A4PunchedSheet } from "./A4PunchedSheet";
 import { ImageBlock } from "./ImageBlock";
 import { VideoBlock } from "./VideoBlock";
 import { ColumnLayoutBlock } from "./ColumnLayoutBlock";
+import { compressImageDataUrl } from "./documentStore";
 
 export interface A4NotionEditorProps {
   initialTitle?: string;
@@ -130,6 +131,24 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
     blockId: string;
   } | null>(null);
 
+  // Drag-and-drop auto-layouting state
+  const [draggedBlockInfo, setDraggedBlockInfo] = useState<{
+    pageIdx: number;
+    blockId: string;
+    parentBlockId?: string;
+    colId?: string;
+  } | null>(null);
+
+  const [dropTarget, setDropTarget] = useState<{
+    pageIdx: number;
+    blockId: string;
+    position: "top" | "bottom" | "left" | "right";
+    parentBlockId?: string;
+    colId?: string;
+    indicatorRect?: { left: number; right: number; width: number };
+  } | null>(null);
+
+  const [hoveredBlockId, setHoveredBlockId] = useState<string | null>(null);
   const blockRefs = useRef<Map<string, HTMLElement>>(new Map());
   const editorContainerRef = useRef<HTMLDivElement>(null);
 
@@ -635,6 +654,451 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
     setTimeout(() => blockRefs.current.get(newBlockId)?.focus(), 50);
   };
 
+  // ── Drag & Drop Auto-Layouting Engine ──
+  const handleDragStart = (
+    e: React.DragEvent,
+    pageIdx: number,
+    blockId: string,
+    parentBlockId?: string,
+    colId?: string
+  ) => {
+    e.stopPropagation();
+    e.dataTransfer.setData("text/plain", blockId);
+    e.dataTransfer.effectAllowed = "move";
+    setDraggedBlockInfo({ pageIdx, blockId, parentBlockId, colId });
+  };
+
+  const handleDragOver = (
+    e: React.DragEvent,
+    pageIdx: number,
+    targetBlockId: string,
+    parentBlockId?: string,
+    colId?: string
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "move";
+
+    if (!draggedBlockInfo || draggedBlockInfo.blockId === targetBlockId) {
+      return;
+    }
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const heightRatio = y / rect.height;
+
+    const page = activePages[pageIdx];
+    const targetBlock = parentBlockId
+      ? page?.blocks.find((b) => b.id === parentBlockId)?.columns?.find((c) => c.id === colId)?.blocks.find((cb) => cb.id === targetBlockId)
+      : page?.blocks.find((b) => b.id === targetBlockId);
+
+    let position: "top" | "bottom" | "left" | "right";
+    let indicatorRect: { left: number; right: number; width: number } | undefined;
+
+    if (parentBlockId && colId) {
+      position = heightRatio < 0.5 ? "top" : "bottom";
+    } else if (
+      targetBlock &&
+      (targetBlock.type === "image" || targetBlock.type === "video") &&
+      targetBlock.widthPercentage &&
+      targetBlock.widthPercentage < 100
+    ) {
+      // Content-aware boundary detection for resized images/videos
+      const pct = targetBlock.widthPercentage / 100;
+      const align = targetBlock.alignment || "center";
+      const contentW = rect.width * pct;
+      const contentLeft = align === "left" ? 0 : align === "right" ? rect.width - contentW : (rect.width - contentW) / 2;
+      const contentRight = contentLeft + contentW;
+
+      indicatorRect = { left: contentLeft, right: contentRight, width: contentW };
+
+      if (x < contentLeft + 48) {
+        position = "left";
+      } else if (x > contentRight - 48) {
+        position = "right";
+      } else {
+        position = heightRatio < 0.5 ? "top" : "bottom";
+      }
+    } else {
+      // Full width block
+      const edgeThreshold = Math.min(rect.width * 0.25, 96);
+      if (x < edgeThreshold) {
+        position = "left";
+      } else if (x > rect.width - edgeThreshold) {
+        position = "right";
+      } else {
+        position = heightRatio < 0.5 ? "top" : "bottom";
+      }
+    }
+
+    setDropTarget({
+      pageIdx,
+      blockId: targetBlockId,
+      position,
+      parentBlockId,
+      colId,
+      indicatorRect,
+    });
+  };
+
+  const handleDragLeave = (e: React.DragEvent, blockId: string) => {
+    e.stopPropagation();
+    if (dropTarget?.blockId === blockId) {
+      setDropTarget(null);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedBlockInfo(null);
+    setDropTarget(null);
+  };
+
+  const handleDrop = (
+    e: React.DragEvent,
+    targetPageIdx: number,
+    targetBlockId: string,
+    targetParentBlockId?: string,
+    targetColId?: string,
+    overridePosition?: "top" | "bottom" | "left" | "right"
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const position = overridePosition || dropTarget?.position;
+
+    if (!draggedBlockInfo || !position || draggedBlockInfo.blockId === targetBlockId) {
+      handleDragEnd();
+      return;
+    }
+    let draggedBlock: NotionBlock | null = null;
+
+    // 1. Remove dragged block from its source with Notion-style column auto-dissolution
+    const pagesWithoutDragged = activePages.map((page, pIdx) => {
+      // Inside a column:
+      if (draggedBlockInfo.parentBlockId && draggedBlockInfo.colId) {
+        if (pIdx !== draggedBlockInfo.pageIdx) return page;
+        const nextBlocks: NotionBlock[] = [];
+        page.blocks.forEach((b) => {
+          if (b.id !== draggedBlockInfo.parentBlockId || !b.columns) {
+            nextBlocks.push(b);
+            return;
+          }
+          const updatedCols = b.columns.map((c) => {
+            if (c.id !== draggedBlockInfo.colId) return c;
+            const found = c.blocks.find((cb) => cb.id === draggedBlockInfo.blockId);
+            if (found) draggedBlock = found;
+            const remaining = c.blocks.filter((cb) => cb.id !== draggedBlockInfo.blockId);
+            return {
+              ...c,
+              blocks: remaining,
+            };
+          });
+
+          // Check if any column is empty
+          const nonEmptyCols = updatedCols.filter((c) => c.blocks.length > 0);
+          if (nonEmptyCols.length <= 1) {
+            // Auto-dissolution: if only 1 column remains, unwrap its blocks into the page flow!
+            if (nonEmptyCols.length === 1) {
+              nextBlocks.push(...nonEmptyCols[0].blocks);
+            }
+          } else {
+            const updatedColumnBlock: NotionBlock = {
+              ...b,
+              layoutColumns: nonEmptyCols.length as 2 | 3,
+              columns: nonEmptyCols,
+            };
+            nextBlocks.push(updatedColumnBlock);
+          }
+        });
+        return { ...page, blocks: nextBlocks };
+      }
+
+      // At page root:
+      if (pIdx === draggedBlockInfo.pageIdx) {
+        const found = page.blocks.find((b) => b.id === draggedBlockInfo.blockId);
+        if (found) draggedBlock = found;
+        return {
+          ...page,
+          blocks: page.blocks.filter((b) => b.id !== draggedBlockInfo.blockId),
+        };
+      }
+      return page;
+    });
+
+    if (!draggedBlock) {
+      handleDragEnd();
+      return;
+    }
+
+    const currentDragged: NotionBlock = draggedBlock;
+
+    // 2. Insert dragged block at target position
+    const updatedPages: A4Page[] = pagesWithoutDragged.map((page, pIdx) => {
+      if (pIdx !== targetPageIdx) return page;
+
+      // Drop inside a column (vertical stack above or below)
+      if (targetParentBlockId && targetColId) {
+        return {
+          ...page,
+          blocks: page.blocks.map((b) => {
+            if (b.id !== targetParentBlockId || !b.columns) return b;
+            return {
+              ...b,
+              columns: b.columns.map((c) => {
+                if (c.id !== targetColId) return c;
+                const nextBlocks = [...c.blocks];
+                const targetIdx = targetBlockId ? nextBlocks.findIndex((cb) => cb.id === targetBlockId) : -1;
+                const insertIdx = position === "bottom" ? targetIdx + 1 : Math.max(0, targetIdx);
+                // Inside column, images adapt to full column width
+                const normalized = currentDragged.type === "image"
+                  ? { ...currentDragged, widthPercentage: 100 }
+                  : currentDragged;
+                nextBlocks.splice(insertIdx, 0, normalized);
+                return { ...c, blocks: nextBlocks };
+              }),
+            };
+          }),
+        };
+      }
+
+      // Auto-layout Multi-Column side-by-side split (position === "left" | "right")
+      if (position === "left" || position === "right") {
+        const targetIdx = page.blocks.findIndex((b) => b.id === targetBlockId);
+        if (targetIdx === -1) return page;
+        const targetBlock = page.blocks[targetIdx];
+
+        const normalizedDragged: NotionBlock = currentDragged.type === "image"
+          ? { ...currentDragged, widthPercentage: 100 }
+          : currentDragged;
+        const normalizedTarget: NotionBlock = targetBlock.type === "image"
+          ? { ...targetBlock, widthPercentage: 100 }
+          : targetBlock;
+
+        if (targetBlock.type === "columns" && targetBlock.columns) {
+          if (targetBlock.columns.length < 3) {
+            const newCol: ColumnData = {
+              id: generateUniqueId("col"),
+              blocks: [normalizedDragged],
+            };
+            const nextCols = position === "left"
+              ? [newCol, ...targetBlock.columns]
+              : [...targetBlock.columns, newCol];
+            const updatedBlock: NotionBlock = {
+              ...targetBlock,
+              layoutColumns: (targetBlock.columns.length + 1) as 2 | 3,
+              columns: nextCols,
+            };
+            const nextBlocks = [...page.blocks];
+            nextBlocks[targetIdx] = updatedBlock;
+            return { ...page, blocks: nextBlocks };
+          }
+        }
+
+        // Create new 2-column auto-layout
+        const col1: ColumnData = {
+          id: generateUniqueId("col"),
+          blocks: [position === "left" ? normalizedDragged : normalizedTarget],
+        };
+        const col2: ColumnData = {
+          id: generateUniqueId("col"),
+          blocks: [position === "left" ? normalizedTarget : normalizedDragged],
+        };
+
+        const newColumnBlock: NotionBlock = {
+          id: generateUniqueId("blk"),
+          type: "columns",
+          content: "",
+          layoutColumns: 2,
+          columns: [col1, col2],
+        };
+
+        const nextBlocks = [...page.blocks];
+        nextBlocks[targetIdx] = newColumnBlock;
+        return { ...page, blocks: nextBlocks };
+      }
+
+      // Standard vertical reordering (top / bottom) at page root
+      const targetIdx = page.blocks.findIndex((b) => b.id === targetBlockId);
+      const nextBlocks = [...page.blocks];
+      const insertIdx = position === "bottom" ? targetIdx + 1 : Math.max(0, targetIdx);
+      nextBlocks.splice(insertIdx, 0, currentDragged);
+      return { ...page, blocks: nextBlocks };
+    });
+
+    handlePagesChange(updatedPages);
+    handleDragEnd();
+  };
+
+  // ── 3-Column Split Insertion Drop Handler ──
+  const handleDropColumnSplit = (pageIdx: number, parentBlockId: string, insertIndex: number) => {
+    if (!draggedBlockInfo) return;
+
+    let draggedBlock: NotionBlock | null = null;
+
+    // 1. Remove dragged block from its source
+    const pagesWithoutDragged = activePages.map((page, pIdx) => {
+      if (draggedBlockInfo.parentBlockId && draggedBlockInfo.colId) {
+        if (pIdx !== draggedBlockInfo.pageIdx) return page;
+        const nextBlocks: NotionBlock[] = [];
+        page.blocks.forEach((b) => {
+          if (b.id !== draggedBlockInfo.parentBlockId || !b.columns) {
+            nextBlocks.push(b);
+            return;
+          }
+          const updatedCols = b.columns.map((c) => {
+            if (c.id !== draggedBlockInfo.colId) return c;
+            const found = c.blocks.find((cb) => cb.id === draggedBlockInfo.blockId);
+            if (found) draggedBlock = found;
+            const remaining = c.blocks.filter((cb) => cb.id !== draggedBlockInfo.blockId);
+            return { ...c, blocks: remaining };
+          });
+          const nonEmptyCols = updatedCols.filter((c) => c.blocks.length > 0);
+          if (nonEmptyCols.length <= 1) {
+            if (nonEmptyCols.length === 1) nextBlocks.push(...nonEmptyCols[0].blocks);
+          } else {
+            const updatedColBlock: NotionBlock = {
+              ...b,
+              layoutColumns: nonEmptyCols.length as 2 | 3,
+              columns: nonEmptyCols,
+            };
+            nextBlocks.push(updatedColBlock);
+          }
+        });
+        return { ...page, blocks: nextBlocks };
+      }
+
+      if (pIdx === draggedBlockInfo.pageIdx) {
+        const found = page.blocks.find((b) => b.id === draggedBlockInfo.blockId);
+        if (found) draggedBlock = found;
+        return {
+          ...page,
+          blocks: page.blocks.filter((b) => b.id !== draggedBlockInfo.blockId),
+        };
+      }
+      return page;
+    });
+
+    if (!draggedBlock) {
+      handleDragEnd();
+      return;
+    }
+
+    const currentDragged: NotionBlock = draggedBlock;
+    const normalizedDragged: NotionBlock = currentDragged.type === "image"
+      ? { ...currentDragged, widthPercentage: 100 }
+      : currentDragged;
+
+    // 2. Insert as new column in target parent block
+    const updatedPages: A4Page[] = pagesWithoutDragged.map((page, pIdx) => {
+      if (pIdx !== pageIdx) return page;
+      return {
+        ...page,
+        blocks: page.blocks.map((b): NotionBlock => {
+          if (b.id !== parentBlockId || !b.columns) return b;
+          if (b.columns.length >= 3) return b;
+
+          const newCol: ColumnData = {
+            id: generateUniqueId("col"),
+            blocks: [normalizedDragged],
+          };
+          const nextCols = [...b.columns];
+          nextCols.splice(Math.max(0, Math.min(nextCols.length, insertIndex)), 0, newCol);
+          return {
+            ...b,
+            layoutColumns: 3,
+            columns: nextCols,
+          };
+        }),
+      };
+    });
+
+    handlePagesChange(updatedPages);
+    handleDragEnd();
+  };
+
+  // ── Clipboard Image Paste Engine ──
+  const handlePaste = async (
+    e: React.ClipboardEvent,
+    pageIdx: number,
+    targetBlockId?: string,
+    colInfo?: { parentBlockId: string; colId: string }
+  ) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    const imageItem = Array.from(items).find((it) => it.type.startsWith("image/"));
+    if (!imageItem) {
+      return; // Standard text paste
+    }
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const file = imageItem.getAsFile();
+    if (!file) return;
+
+    const compressedUrl = await compressImageDataUrl(file);
+    const newBlockId = generateUniqueId("blk");
+    const newImageBlock: NotionBlock = {
+      id: newBlockId,
+      type: "image",
+      content: compressedUrl,
+      widthPercentage: 100,
+      alignment: "center",
+      caption: "",
+    };
+
+    if (colInfo) {
+      // Paste inside column
+      const updated = activePages.map((p, pIdx) => {
+        if (pIdx !== pageIdx) return p;
+        return {
+          ...p,
+          blocks: p.blocks.map((b) => {
+            if (b.id !== colInfo.parentBlockId || !b.columns) return b;
+            return {
+              ...b,
+              columns: b.columns.map((c) => {
+                if (c.id !== colInfo.colId) return c;
+                const nextBlocks = [...c.blocks];
+                const bIdx = targetBlockId ? nextBlocks.findIndex((cb) => cb.id === targetBlockId) : -1;
+                if (bIdx !== -1 && nextBlocks[bIdx].type === "paragraph" && !nextBlocks[bIdx].content.trim()) {
+                  nextBlocks[bIdx] = newImageBlock;
+                } else if (bIdx !== -1) {
+                  nextBlocks.splice(bIdx + 1, 0, newImageBlock);
+                } else {
+                  nextBlocks.push(newImageBlock);
+                }
+                return { ...c, blocks: nextBlocks };
+              }),
+            };
+          }),
+        };
+      });
+      handlePagesChange(updated);
+      setActiveBlockId(newBlockId);
+    } else {
+      // Paste at root level
+      const currentPage = activePages[pageIdx];
+      if (!currentPage) return;
+      const bIdx = targetBlockId ? currentPage.blocks.findIndex((b) => b.id === targetBlockId) : -1;
+
+      const nextBlocks = [...currentPage.blocks];
+      if (bIdx !== -1 && nextBlocks[bIdx].type === "paragraph" && !nextBlocks[bIdx].content.trim()) {
+        nextBlocks[bIdx] = newImageBlock;
+      } else if (bIdx !== -1) {
+        nextBlocks.splice(bIdx + 1, 0, newImageBlock);
+      } else {
+        nextBlocks.push(newImageBlock);
+      }
+
+      const updated = activePages.map((p, pIdx) => (pIdx === pageIdx ? { ...p, blocks: nextBlocks } : p));
+      handlePagesChange(updated);
+      setActiveBlockId(newBlockId);
+    }
+  };
+
   const handleAddNewPage = () => {
     const newPageNum = activePages.length + 1;
     const newPage: A4Page = {
@@ -977,6 +1441,16 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
               id: generateUniqueId("col"),
               blocks: [{ id: generateUniqueId("blk"), type: "paragraph", content: "", widthPercentage: 100, alignment: "center" }],
             });
+          } else if (newCount === 2 && newCols.length > 2) {
+            const thirdCol = newCols[2];
+            const secondCol = newCols[1];
+            newCols = [
+              newCols[0],
+              {
+                ...secondCol,
+                blocks: [...secondCol.blocks, ...thirdCol.blocks],
+              },
+            ];
           }
           return { ...b, layoutColumns: newCount, columns: newCols };
         }),
@@ -1293,7 +1767,7 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
                 height: "1140px",
                 minHeight: "1140px",
                 maxHeight: "1140px",
-                overflow: "clip",
+                overflow: "visible",
                 boxShadow: "0 18px 50px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.08)",
               }}
               onScroll={(e) => {
@@ -1347,8 +1821,37 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
             ) : null}
 
             {/* Blocks Flow for this page */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px", flex: 1 }}>
-              {page.blocks.map((block, index) => (
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "10px", flex: 1 }}
+              onPaste={(e) => handlePaste(e, pageIdx)}
+            >
+              {page.blocks.map((block, index) => {
+                const isDropTarget = dropTarget?.blockId === block.id && dropTarget?.pageIdx === pageIdx && !dropTarget?.parentBlockId;
+                const isDraggingThis = draggedBlockInfo?.blockId === block.id;
+                const hasContent = Boolean(
+                  (block.content && block.content.trim().length > 0) ||
+                  block.type === "image" ||
+                  block.type === "video" ||
+                  block.type === "columns" ||
+                  block.type === "divider"
+                );
+                const isBlockHovered = hasContent && (hoveredBlockId === block.id || blockOptionsMenuId === block.id);
+                const gutterTop =
+                  block.type === "h1"
+                    ? "16px"
+                    : block.type === "h2"
+                    ? "13px"
+                    : block.type === "h3"
+                    ? "10px"
+                    : block.type === "quote"
+                    ? "6px"
+                    : block.type === "callout"
+                    ? "8px"
+                    : block.type === "code"
+                    ? "10px"
+                    : "4px";
+
+                return (
                 <div
                   key={block.id}
                   style={{
@@ -1356,23 +1859,103 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
                     width: "100%",
                     display: "flex",
                     alignItems: "flex-start",
+                    opacity: isDraggingThis ? 0.35 : 1,
+                    transition: "opacity 0.15s ease",
                   }}
                   className="group/block"
+                  onMouseEnter={() => setHoveredBlockId(block.id)}
+                  onMouseLeave={() => setHoveredBlockId((prev) => (prev === block.id ? null : prev))}
+                  onDragOver={(e) => handleDragOver(e, pageIdx, block.id)}
+                  onDragLeave={(e) => handleDragLeave(e, block.id)}
+                  onDrop={(e) => handleDrop(e, pageIdx, block.id)}
                 >
+                  {/* Top Drop Indicator */}
+                  {isDropTarget && dropTarget?.position === "top" && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "-5px",
+                        left: dropTarget?.indicatorRect ? `${dropTarget.indicatorRect.left}px` : 0,
+                        width: dropTarget?.indicatorRect ? `${dropTarget.indicatorRect.width}px` : "100%",
+                        height: "3px",
+                        borderRadius: "2px",
+                        backgroundColor: themeColor || "#194bfd",
+                        boxShadow: "0 0 8px rgba(25, 75, 253, 0.4)",
+                        zIndex: 30,
+                        pointerEvents: "none",
+                      }}
+                    />
+                  )}
+
+                  {/* Bottom Drop Indicator */}
+                  {isDropTarget && dropTarget?.position === "bottom" && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: "-5px",
+                        left: dropTarget?.indicatorRect ? `${dropTarget.indicatorRect.left}px` : 0,
+                        width: dropTarget?.indicatorRect ? `${dropTarget.indicatorRect.width}px` : "100%",
+                        height: "3px",
+                        borderRadius: "2px",
+                        backgroundColor: themeColor || "#194bfd",
+                        boxShadow: "0 0 8px rgba(25, 75, 253, 0.4)",
+                        zIndex: 30,
+                        pointerEvents: "none",
+                      }}
+                    />
+                  )}
+
+                  {/* Left Multi-Column Drop Indicator (Auto-layout Split) */}
+                  {isDropTarget && dropTarget?.position === "left" && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        bottom: 0,
+                        left: dropTarget?.indicatorRect ? `${dropTarget.indicatorRect.left - 6}px` : "-6px",
+                        width: "4px",
+                        borderRadius: "2px",
+                        backgroundColor: themeColor || "#194bfd",
+                        boxShadow: "0 0 10px rgba(25, 75, 253, 0.5)",
+                        zIndex: 30,
+                        pointerEvents: "none",
+                      }}
+                    />
+                  )}
+
+                  {/* Right Multi-Column Drop Indicator (Auto-layout Split) */}
+                  {isDropTarget && dropTarget?.position === "right" && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        bottom: 0,
+                        left: dropTarget?.indicatorRect ? `${dropTarget.indicatorRect.right + 2}px` : undefined,
+                        right: dropTarget?.indicatorRect ? undefined : "-6px",
+                        width: "4px",
+                        borderRadius: "2px",
+                        backgroundColor: themeColor || "#194bfd",
+                        boxShadow: "0 0 10px rgba(25, 75, 253, 0.5)",
+                        zIndex: 30,
+                        pointerEvents: "none",
+                      }}
+                    />
+                  )}
+
                   {/* ── Left Hover Gutter: + and ⋮⋮ Drag/Options Handle ── */}
                   <div
                     style={{
                       position: "absolute",
-                      left: "-36px",
-                      top: "2px",
+                      left: "-28px",
+                      top: gutterTop,
                       display: "flex",
                       alignItems: "center",
                       gap: "2px",
-                      opacity: 0,
+                      opacity: isBlockHovered ? 1 : 0,
+                      pointerEvents: isBlockHovered ? "auto" : "none",
                       transition: "opacity 0.15s ease",
-                      zIndex: 10,
+                      zIndex: 25,
                     }}
-                    className="group-hover/block:opacity-100"
                   >
                     {/* + Add Block Below */}
                     <button
@@ -1380,12 +1963,12 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
                       onClick={() => addBlockBelow(pageIdx, block.id, "paragraph")}
                       title="Add a block below"
                       style={{
-                        width: "18px",
+                        width: "14px",
                         height: "18px",
                         borderRadius: "3px",
                         border: "none",
                         background: "transparent",
-                        color: "#71717a",
+                        color: "#8e8e93",
                         cursor: "pointer",
                         display: "flex",
                         alignItems: "center",
@@ -1393,32 +1976,35 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
                         padding: 0,
                       }}
                     >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <line x1="12" y1="5" x2="12" y2="19" />
                         <line x1="5" y1="12" x2="19" y2="12" />
                       </svg>
                     </button>
 
-                    {/* ⋮⋮ Six-dot Options Handle */}
+                    {/* ⋮⋮ Six-dot Options & Drag Handle */}
                     <button
                       type="button"
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, pageIdx, block.id)}
+                      onDragEnd={handleDragEnd}
                       onClick={() => setBlockOptionsMenuId(blockOptionsMenuId === block.id ? null : block.id)}
-                      title="Block options (reorder, duplicate, columns)"
+                      title="Drag to move or split columns • Click for options"
                       style={{
-                        width: "18px",
+                        width: "12px",
                         height: "18px",
                         borderRadius: "3px",
                         border: "none",
                         background: "transparent",
-                        color: "#71717a",
-                        cursor: "pointer",
+                        color: "#8e8e93",
+                        cursor: "grab",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         padding: 0,
                       }}
                     >
-                      <svg width="10" height="14" viewBox="0 0 10 16" fill="currentColor">
+                      <svg width="8" height="13" viewBox="0 0 10 16" fill="currentColor">
                         <circle cx="2" cy="2" r="1.5" />
                         <circle cx="8" cy="2" r="1.5" />
                         <circle cx="2" cy="8" r="1.5" />
@@ -1564,6 +2150,7 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
                         handleBlockInput(e, pageIdx, block);
                       }}
                       onKeyDown={(e) => handleBlockKeyDown(e, pageIdx, block, index)}
+                      onPaste={(e) => handlePaste(e, pageIdx, block.id)}
                       placeholder={activeBlockId === block.id ? "Type '/' for commands..." : ""}
                       rows={1}
                       style={{
@@ -1595,6 +2182,7 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
                       onFocus={() => setActiveBlockId(block.id)}
                       onChange={(e) => handleBlockInput(e, pageIdx, block)}
                       onKeyDown={(e) => handleBlockKeyDown(e, pageIdx, block, index)}
+                      onPaste={(e) => handlePaste(e, pageIdx, block.id)}
                       placeholder="Heading 1"
                       style={{
                         width: "100%",
@@ -1624,6 +2212,7 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
                       onFocus={() => setActiveBlockId(block.id)}
                       onChange={(e) => handleBlockInput(e, pageIdx, block)}
                       onKeyDown={(e) => handleBlockKeyDown(e, pageIdx, block, index)}
+                      onPaste={(e) => handlePaste(e, pageIdx, block.id)}
                       placeholder="Heading 2"
                       style={{
                         width: "100%",
@@ -1653,6 +2242,7 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
                       onFocus={() => setActiveBlockId(block.id)}
                       onChange={(e) => handleBlockInput(e, pageIdx, block)}
                       onKeyDown={(e) => handleBlockKeyDown(e, pageIdx, block, index)}
+                      onPaste={(e) => handlePaste(e, pageIdx, block.id)}
                       placeholder="Heading 3"
                       style={{
                         width: "100%",
@@ -1692,6 +2282,7 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
                           handleBlockInput(e, pageIdx, block);
                         }}
                         onKeyDown={(e) => handleBlockKeyDown(e, pageIdx, block, index)}
+                        onPaste={(e) => handlePaste(e, pageIdx, block.id)}
                         placeholder={activeBlockId === block.id ? "To-do item..." : ""}
                         rows={1}
                         style={{
@@ -1730,6 +2321,7 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
                           handleBlockInput(e, pageIdx, block);
                         }}
                         onKeyDown={(e) => handleBlockKeyDown(e, pageIdx, block, index)}
+                        onPaste={(e) => handlePaste(e, pageIdx, block.id)}
                         placeholder={activeBlockId === block.id ? "List item..." : ""}
                         rows={1}
                         style={{
@@ -1769,6 +2361,7 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
                           handleBlockInput(e, pageIdx, block);
                         }}
                         onKeyDown={(e) => handleBlockKeyDown(e, pageIdx, block, index)}
+                        onPaste={(e) => handlePaste(e, pageIdx, block.id)}
                         placeholder={activeBlockId === block.id ? "List item..." : ""}
                         rows={1}
                         style={{
@@ -1805,6 +2398,7 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
                           handleBlockInput(e, pageIdx, block);
                         }}
                         onKeyDown={(e) => handleBlockKeyDown(e, pageIdx, block, index)}
+                        onPaste={(e) => handlePaste(e, pageIdx, block.id)}
                         placeholder={activeBlockId === block.id ? "Quote..." : ""}
                         rows={1}
                         style={{
@@ -1856,6 +2450,7 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
                           handleBlockInput(e, pageIdx, block);
                         }}
                         onKeyDown={(e) => handleBlockKeyDown(e, pageIdx, block, index)}
+                        onPaste={(e) => handlePaste(e, pageIdx, block.id)}
                         placeholder={activeBlockId === block.id ? "Callout text..." : ""}
                         rows={1}
                         style={{
@@ -1901,6 +2496,7 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
                           handleBlockInput(e, pageIdx, block);
                         }}
                         onKeyDown={(e) => handleBlockKeyDown(e, pageIdx, block, index)}
+                        onPaste={(e) => handlePaste(e, pageIdx, block.id)}
                         placeholder={activeBlockId === block.id ? "// Paste or write code..." : ""}
                         rows={3}
                         style={{
@@ -1937,6 +2533,7 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
                       layoutCount={block.layoutColumns || 2}
                       themeColor={themeColor}
                       activeBlockId={activeBlockId}
+                      draggedBlockId={draggedBlockInfo?.blockId}
                       onFocusBlock={(bId) => setActiveBlockId(bId)}
                       onInputBlock={(e, colId, colBlock) =>
                         handleColumnBlockInput(e, pageIdx, block.id, colId, colBlock)
@@ -1958,6 +2555,32 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
                       }
                       onConvertLayout={(newCount) => convertColumnLayout(pageIdx, block.id, newCount)}
                       onDeleteLayout={() => deleteBlock(pageIdx, block.id)}
+                      onDragStartBlock={(bId, cId) =>
+                        handleDragStart(
+                          { stopPropagation: () => {}, dataTransfer: { setData: () => {}, effectAllowed: "" } } as unknown as React.DragEvent,
+                          pageIdx,
+                          bId,
+                          block.id,
+                          cId
+                        )
+                      }
+                      onDragEndBlock={handleDragEnd}
+                      onDropBlockInColumn={(cId, targetBId, pos) => {
+                        handleDrop(
+                          { preventDefault: () => {}, stopPropagation: () => {} } as unknown as React.DragEvent,
+                          pageIdx,
+                          targetBId,
+                          block.id,
+                          cId,
+                          pos
+                        );
+                      }}
+                      onDropColumnSplit={(insertIndex) =>
+                        handleDropColumnSplit(pageIdx, block.id, insertIndex)
+                      }
+                      onPasteInColumn={(e, cId, bId) =>
+                        handlePaste(e, pageIdx, bId, { parentBlockId: block.id, colId: cId })
+                      }
                     />
                   )}
 
@@ -1973,6 +2596,8 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
                       onChangeWidth={(w) => updateBlockWidth(pageIdx, block.id, w)}
                       onChangeAlignment={(a) => updateBlockAlignment(pageIdx, block.id, a)}
                       onDelete={() => deleteBlock(pageIdx, block.id)}
+                      onDragStart={(e) => handleDragStart(e, pageIdx, block.id)}
+                      onDragEnd={handleDragEnd}
                     />
                   )}
 
@@ -1988,10 +2613,13 @@ export const A4NotionEditor: React.FC<A4NotionEditorProps> = ({
                       onChangeWidth={(w) => updateBlockWidth(pageIdx, block.id, w)}
                       onChangeAlignment={(a) => updateBlockAlignment(pageIdx, block.id, a)}
                       onDelete={() => deleteBlock(pageIdx, block.id)}
+                      onDragStart={(e) => handleDragStart(e, pageIdx, block.id)}
+                      onDragEnd={handleDragEnd}
                     />
                   )}
                 </div>
-              ))}
+              );
+            })}
             </div>
 
             {/* Click to add paragraph at bottom (Flex 1 fills remaining sheet space) */}

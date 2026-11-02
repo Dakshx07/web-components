@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { compressImageDataUrl } from "./documentStore";
 
 interface ImageBlockProps {
@@ -13,6 +13,8 @@ interface ImageBlockProps {
   onChangeWidth?: (width: number) => void;
   onChangeAlignment?: (alignment: "left" | "center" | "right") => void;
   onDelete: () => void;
+  onDragStart?: (e: React.DragEvent) => void;
+  onDragEnd?: () => void;
 }
 
 export const ImageBlock: React.FC<ImageBlockProps> = ({
@@ -25,17 +27,20 @@ export const ImageBlock: React.FC<ImageBlockProps> = ({
   onChangeWidth,
   onChangeAlignment,
   onDelete,
+  onDragStart,
+  onDragEnd,
 }) => {
   const [activeTab, setActiveTab] = useState<"upload" | "embed">("upload");
   const [urlInput, setUrlInput] = useState(content);
   const [isEditing, setIsEditing] = useState(!content);
   const [isHovered, setIsHovered] = useState(false);
+  const [prevWidthPercentage, setPrevWidthPercentage] = useState(widthPercentage);
   const [currentWidth, setCurrentWidth] = useState(widthPercentage);
-  const [isDragging, setIsDragging] = useState<"left" | "right" | null>(null);
-
-  useEffect(() => {
+  if (widthPercentage !== prevWidthPercentage) {
+    setPrevWidthPercentage(widthPercentage);
     setCurrentWidth(widthPercentage);
-  }, [widthPercentage]);
+  }
+  const [isDragging, setIsDragging] = useState<"left" | "right" | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -267,14 +272,56 @@ export const ImageBlock: React.FC<ImageBlockProps> = ({
         <img
           src={content}
           alt={caption || "Archival image"}
+          draggable={false}
           style={{
             width: "100%",
             height: "auto",
             display: "block",
             borderRadius: "6px",
             boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
+            userSelect: "none",
           }}
         />
+
+        {/* ── Top-Left Floating 6-Dot Drag Handle (Notion Style) ── */}
+        {isHovered && onDragStart && (
+          <div
+            draggable
+            onDragStart={(e) => {
+              e.stopPropagation();
+              onDragStart(e);
+            }}
+            onDragEnd={onDragEnd}
+            title="Drag to move or split columns"
+            style={{
+              position: "absolute",
+              top: "8px",
+              left: "8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "26px",
+              height: "26px",
+              borderRadius: "6px",
+              backgroundColor: "rgba(24, 24, 27, 0.88)",
+              backdropFilter: "blur(12px)",
+              color: "#f4f4f5",
+              cursor: "grab",
+              zIndex: 35,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.35)",
+              border: "1px solid rgba(255,255,255,0.15)",
+            }}
+          >
+            <svg width="10" height="14" viewBox="0 0 10 16" fill="currentColor">
+              <circle cx="2" cy="2" r="1.5" />
+              <circle cx="8" cy="2" r="1.5" />
+              <circle cx="2" cy="8" r="1.5" />
+              <circle cx="8" cy="8" r="1.5" />
+              <circle cx="2" cy="14" r="1.5" />
+              <circle cx="8" cy="14" r="1.5" />
+            </svg>
+          </div>
+        )}
 
         {/* ── Left Draggable Vertical Resize Handle (||) ── */}
         {(isHovered || isDragging) && (

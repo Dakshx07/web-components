@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 
 interface VideoBlockProps {
   content: string;
@@ -12,6 +12,8 @@ interface VideoBlockProps {
   onChangeWidth?: (width: number) => void;
   onChangeAlignment?: (alignment: "left" | "center" | "right") => void;
   onDelete: () => void;
+  onDragStart?: (e: React.DragEvent) => void;
+  onDragEnd?: () => void;
 }
 
 export const VideoBlock: React.FC<VideoBlockProps> = ({
@@ -24,17 +26,20 @@ export const VideoBlock: React.FC<VideoBlockProps> = ({
   onChangeWidth,
   onChangeAlignment,
   onDelete,
+  onDragStart,
+  onDragEnd,
 }) => {
   const [activeTab, setActiveTab] = useState<"upload" | "embed">("embed");
   const [urlInput, setUrlInput] = useState(content);
   const [isEditing, setIsEditing] = useState(!content);
   const [isHovered, setIsHovered] = useState(false);
+  const [prevWidthPercentage, setPrevWidthPercentage] = useState(widthPercentage);
   const [currentWidth, setCurrentWidth] = useState(widthPercentage);
-  const [isDragging, setIsDragging] = useState<"left" | "right" | null>(null);
-
-  useEffect(() => {
+  if (widthPercentage !== prevWidthPercentage) {
+    setPrevWidthPercentage(widthPercentage);
     setCurrentWidth(widthPercentage);
-  }, [widthPercentage]);
+  }
+  const [isDragging, setIsDragging] = useState<"left" | "right" | null>(null);
 
   // Custom Video Player States (matching Screenshot 1 & 2)
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -410,7 +415,7 @@ export const VideoBlock: React.FC<VideoBlockProps> = ({
                   left: "12px",
                   display: "flex",
                   alignItems: "center",
-                  gap: "6px",
+                  gap: "8px",
                   padding: "6px 10px",
                   borderRadius: "20px",
                   backgroundColor: "rgba(24, 24, 27, 0.75)",
@@ -418,6 +423,35 @@ export const VideoBlock: React.FC<VideoBlockProps> = ({
                   zIndex: 15,
                 }}
               >
+                {onDragStart && (
+                  <div
+                    draggable
+                    onDragStart={(e) => {
+                      e.stopPropagation();
+                      onDragStart(e);
+                    }}
+                    onDragEnd={onDragEnd}
+                    title="Drag to move or split columns"
+                    style={{
+                      cursor: "grab",
+                      color: "#f4f4f5",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      paddingRight: "4px",
+                      borderRight: "1px solid rgba(255,255,255,0.2)",
+                    }}
+                  >
+                    <svg width="10" height="14" viewBox="0 0 10 16" fill="currentColor">
+                      <circle cx="2" cy="2" r="1.5" />
+                      <circle cx="8" cy="2" r="1.5" />
+                      <circle cx="2" cy="8" r="1.5" />
+                      <circle cx="8" cy="8" r="1.5" />
+                      <circle cx="2" cy="14" r="1.5" />
+                      <circle cx="8" cy="14" r="1.5" />
+                    </svg>
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={toggleFullscreen}

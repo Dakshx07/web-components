@@ -10,6 +10,7 @@ interface ColumnLayoutBlockProps {
   layoutCount: 2 | 3;
   themeColor?: string;
   activeBlockId?: string;
+  draggedBlockId?: string | null;
   onFocusBlock?: (blockId: string) => void;
   onInputBlock?: (e: React.FormEvent<HTMLElement>, colId: string, block: NotionBlock) => void;
   onUpdateColumnBlock: (colId: string, blockId: string, content: string) => void;
@@ -20,6 +21,11 @@ interface ColumnLayoutBlockProps {
   onDeleteBlockInColumn: (colId: string, blockId: string) => void;
   onConvertLayout: (newCount: 2 | 3) => void;
   onDeleteLayout: () => void;
+  onDragStartBlock?: (blockId: string, colId: string) => void;
+  onDragEndBlock?: () => void;
+  onDropBlockInColumn?: (colId: string, targetBlockId: string, position: "top" | "bottom") => void;
+  onDropColumnSplit?: (insertIndex: number) => void;
+  onPasteInColumn?: (e: React.ClipboardEvent, colId: string, targetBlockId?: string) => void;
 }
 
 export const ColumnLayoutBlock: React.FC<ColumnLayoutBlockProps> = ({
@@ -27,6 +33,7 @@ export const ColumnLayoutBlock: React.FC<ColumnLayoutBlockProps> = ({
   layoutCount,
   themeColor = "#194bfd",
   activeBlockId,
+  draggedBlockId,
   onFocusBlock,
   onInputBlock,
   onUpdateColumnBlock,
@@ -37,8 +44,20 @@ export const ColumnLayoutBlock: React.FC<ColumnLayoutBlockProps> = ({
   onDeleteBlockInColumn,
   onConvertLayout,
   onDeleteLayout,
+  onDragStartBlock,
+  onDragEndBlock,
+  onDropBlockInColumn,
+  onDropColumnSplit,
+  onPasteInColumn,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [colDropTarget, setColDropTarget] = useState<{
+    colId: string;
+    blockId: string;
+    position: "top" | "bottom";
+  } | null>(null);
+  const [splitDropTarget, setSplitDropTarget] = useState<number | null>(null);
+  const [hoveredColBlockId, setHoveredColBlockId] = useState<string | null>(null);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>,
@@ -79,12 +98,26 @@ export const ColumnLayoutBlock: React.FC<ColumnLayoutBlockProps> = ({
         {columns.slice(0, layoutCount).map((col, colIdx) => (
           <div
             key={col.id || `col-${colIdx}`}
+            onPaste={(e) => onPasteInColumn && onPasteInColumn(e, col.id)}
+            onDragOver={(e) => {
+              if (col.blocks.length === 0) {
+                e.preventDefault();
+                e.stopPropagation();
+              }
+            }}
+            onDrop={(e) => {
+              if (col.blocks.length === 0 && onDropBlockInColumn) {
+                e.preventDefault();
+                e.stopPropagation();
+                onDropBlockInColumn(col.id, "", "bottom");
+              }
+            }}
             onClick={(e) => {
               // If clicked on empty space of column, focus last block or add paragraph
               if (e.target === e.currentTarget) {
                 const last = col.blocks[col.blocks.length - 1];
                 if (last && last.type === "paragraph" && !last.content) {
-                  onFocusBlock && onFocusBlock(last.id);
+                  if (onFocusBlock) onFocusBlock(last.id);
                   const el = document.querySelector(`[data-block-id="${last.id}"]`) as HTMLElement;
                   el?.focus();
                 } else if (last) {
@@ -93,6 +126,7 @@ export const ColumnLayoutBlock: React.FC<ColumnLayoutBlockProps> = ({
               }
             }}
             style={{
+              position: "relative",
               display: "flex",
               flexDirection: "column",
               gap: "8px",
@@ -102,8 +136,178 @@ export const ColumnLayoutBlock: React.FC<ColumnLayoutBlockProps> = ({
               cursor: "text",
             }}
           >
-            {col.blocks.map((block, bIdx) => (
-              <div key={block.id} style={{ width: "100%", position: "relative" }}>
+            {/* ── 3-Column Split Drop Gutter between Col 0 and Col 1 ── */}
+            {layoutCount === 2 && colIdx === 0 && onDropColumnSplit && (
+              <div
+                style={{
+                  position: "absolute",
+                  right: "-14px",
+                  top: 0,
+                  bottom: 0,
+                  width: "14px",
+                  zIndex: 35,
+                  cursor: "col-resize",
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setSplitDropTarget(1);
+                }}
+                onDragLeave={() => setSplitDropTarget(null)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onDropColumnSplit(1);
+                  setSplitDropTarget(null);
+                }}
+              >
+                {splitDropTarget === 1 && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: "5px",
+                      top: 0,
+                      bottom: 0,
+                      width: "3px",
+                      borderRadius: "2px",
+                      backgroundColor: themeColor || "#194bfd",
+                      boxShadow: "0 0 10px rgba(25, 75, 253, 0.5)",
+                    }}
+                  />
+                )}
+              </div>
+            )}
+            {col.blocks.map((block, bIdx) => {
+              const isDropTarget = colDropTarget?.blockId === block.id;
+              const isDraggingThis = draggedBlockId === block.id;
+              const hasContent = Boolean(
+                (block.content && block.content.trim().length > 0) ||
+                block.type === "image" ||
+                block.type === "video" ||
+                block.type === "columns" ||
+                block.type === "divider"
+              );
+              const isColBlockHovered = hasContent && hoveredColBlockId === block.id;
+              const colGutterTop =
+                block.type === "h1"
+                  ? "14px"
+                  : block.type === "h2"
+                  ? "11px"
+                  : block.type === "h3"
+                  ? "8px"
+                  : block.type === "quote"
+                  ? "6px"
+                  : block.type === "callout"
+                  ? "6px"
+                  : "4px";
+
+              return (
+              <div
+                key={block.id}
+                className="group/colblock"
+                onMouseEnter={() => setHoveredColBlockId(block.id)}
+                onMouseLeave={() => setHoveredColBlockId((prev) => (prev === block.id ? null : prev))}
+                style={{
+                  width: "100%",
+                  position: "relative",
+                  opacity: isDraggingThis ? 0.35 : 1,
+                  transition: "opacity 0.15s ease",
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const pos = (e.clientY - rect.top) < rect.height / 2 ? "top" : "bottom";
+                  setColDropTarget({ colId: col.id, blockId: block.id, position: pos });
+                }}
+                onDragLeave={(e) => {
+                  e.stopPropagation();
+                  if (colDropTarget?.blockId === block.id) {
+                    setColDropTarget(null);
+                  }
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (colDropTarget && onDropBlockInColumn) {
+                    onDropBlockInColumn(col.id, block.id, colDropTarget.position);
+                  }
+                  setColDropTarget(null);
+                }}
+                onPaste={(e) => onPasteInColumn && onPasteInColumn(e, col.id, block.id)}
+              >
+                {/* Top Drop Indicator */}
+                {isDropTarget && colDropTarget?.position === "top" && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "-4px",
+                      left: 0,
+                      right: 0,
+                      height: "3px",
+                      borderRadius: "2px",
+                      backgroundColor: themeColor || "#194bfd",
+                      boxShadow: "0 0 8px rgba(25, 75, 253, 0.4)",
+                      zIndex: 30,
+                      pointerEvents: "none",
+                    }}
+                  />
+                )}
+
+                {/* Bottom Drop Indicator */}
+                {isDropTarget && colDropTarget?.position === "bottom" && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: "-4px",
+                      left: 0,
+                      right: 0,
+                      height: "3px",
+                      borderRadius: "2px",
+                      backgroundColor: themeColor || "#194bfd",
+                      boxShadow: "0 0 8px rgba(25, 75, 253, 0.4)",
+                      zIndex: 30,
+                      pointerEvents: "none",
+                    }}
+                  />
+                )}
+
+                {/* Left Column Block Drag Handle */}
+                <div
+                  draggable
+                  onDragStart={(e) => {
+                    e.stopPropagation();
+                    e.dataTransfer.setData("text/plain", block.id);
+                    if (onDragStartBlock) onDragStartBlock(block.id, col.id);
+                  }}
+                  onDragEnd={onDragEndBlock}
+                  title="Drag to reorder or move block"
+                  style={{
+                    position: "absolute",
+                    left: "-16px",
+                    top: colGutterTop,
+                    width: "14px",
+                    height: "16px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    opacity: isColBlockHovered ? 1 : 0,
+                    pointerEvents: isColBlockHovered ? "auto" : "none",
+                    transition: "opacity 0.15s ease",
+                    cursor: "grab",
+                    color: "#8e8e93",
+                    zIndex: 15,
+                  }}
+                >
+                  <svg width="8" height="12" viewBox="0 0 10 16" fill="currentColor">
+                    <circle cx="2" cy="2" r="1.5" />
+                    <circle cx="8" cy="2" r="1.5" />
+                    <circle cx="2" cy="8" r="1.5" />
+                    <circle cx="8" cy="8" r="1.5" />
+                    <circle cx="2" cy="14" r="1.5" />
+                    <circle cx="8" cy="14" r="1.5" />
+                  </svg>
+                </div>
                 {/* ── Paragraph ── */}
                 {block.type === "paragraph" && (
                   <textarea
@@ -603,6 +807,10 @@ export const ColumnLayoutBlock: React.FC<ColumnLayoutBlockProps> = ({
                       onUpdateColumnBlockAlignment(col.id, block.id, a)
                     }
                     onDelete={() => onDeleteBlockInColumn(col.id, block.id)}
+                    onDragStart={(e) => {
+                      if (onDragStartBlock) onDragStartBlock(block.id, col.id);
+                    }}
+                    onDragEnd={onDragEndBlock}
                   />
                 )}
 
@@ -627,10 +835,15 @@ export const ColumnLayoutBlock: React.FC<ColumnLayoutBlockProps> = ({
                       onUpdateColumnBlockAlignment(col.id, block.id, a)
                     }
                     onDelete={() => onDeleteBlockInColumn(col.id, block.id)}
+                    onDragStart={(e) => {
+                      if (onDragStartBlock) onDragStartBlock(block.id, col.id);
+                    }}
+                    onDragEnd={onDragEndBlock}
                   />
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         ))}
       </div>

@@ -69,8 +69,8 @@
 .pageHome {
   width: 100%;
   min-height: 100vh;
-  background-color: #0c0c0d;
-  color: #ffffff;
+  background-color: transparent;
+  color: var(--folder-stack-text, #0D0D0D);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -561,8 +561,8 @@
   overflow: hidden;
   position: relative;
   width: 100%;
-  background-color: #0c0c0d;
-  color: #ffffff;
+  background-color: var(--folder-stack-bg, #FAF9F6);
+  color: var(--folder-stack-text, #0D0D0D);
 }
 
 @media (max-height: 950px), (max-width: 1399px) {
@@ -640,7 +640,7 @@
   line-height: 0.95;
   font-weight: 700;
   text-transform: uppercase;
-  color: var(--color-contrast, #fdfaf7);
+  color: var(--color-contrast, #0D0D0D);
   margin: 0;
   padding: 0;
   letter-spacing: normal;

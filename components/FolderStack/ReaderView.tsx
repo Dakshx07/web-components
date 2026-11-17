@@ -241,6 +241,13 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [zoomState, handleZoomOut, onClose]);
 
+  // Ensure cover is unfolded if initialUnfolded is true and no transform set yet
+  useEffect(() => {
+    if (initialUnfolded && coverRef?.current && !coverRef.current.style.transform) {
+      gsap.set(coverRef.current, { rotateY: -180 });
+    }
+  }, [initialUnfolded, coverRef]);
+
   // Main Page Case Dossier View (Overscroll navigation disabled per design spec)
   return (
     <div
@@ -319,9 +326,11 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
               <div
                 ref={coverRef}
                 className={styles.caseFolderCover}
-                style={{
-                  transform: !initialUnfolded ? "rotateY(0deg)" : "rotateY(-180deg)",
-                }}
+                style={
+                  !initialUnfolded
+                    ? { transform: "rotateY(0deg)" }
+                    : undefined
+                }
               >
                 <div
                   className={`${styles.caseFolderCoverFront} ${styles.stackCover} ${styles.isUnfolded}`}

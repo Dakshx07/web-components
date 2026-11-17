@@ -267,6 +267,7 @@ export const FolderStackAnimation: React.FC = () => {
   const caseTopTabsRef = useRef<HTMLDivElement | null>(null);
   const caseScrapbookRef = useRef<HTMLDivElement | null>(null);
   const caseHeroTitleRef = useRef<HTMLHeadingElement | null>(null);
+  const isSwitchingCaseRef = useRef(false);
 
   const activeGroup = FOLDER_GROUPS[activeGroupIndex];
   const activeCase = activeGroup?.cases[activeCaseIndex] || activeGroup?.cases[0];
@@ -728,10 +729,19 @@ export const FolderStackAnimation: React.FC = () => {
       targetCase = maybeCaseIndex;
     }
 
+    // Ignore if already active or already mid-transition
+    if (
+      (targetGroup === activeGroupIndex && targetCase === activeCaseIndex) ||
+      isSwitchingCaseRef.current
+    ) {
+      return;
+    }
+
+    isSwitchingCaseRef.current = true;
     soundFx.playPaperRustle();
 
     const isAtBottom = (typeof window !== "undefined" ? window.scrollY : 0) > 300;
-    const isNextTransition = isAtBottom || targetGroup !== activeGroupIndex;
+    const isNextTransition = isAtBottom && targetGroup !== activeGroupIndex;
 
     const items = document.querySelectorAll(`.${styles.scrapbookItemDraggable}`);
     const chars = caseHeroTitleRef.current ? caseHeroTitleRef.current.querySelectorAll(".case-char") : [];
@@ -780,6 +790,7 @@ export const FolderStackAnimation: React.FC = () => {
                 if (typeof window !== "undefined" && window.__lenis) {
                   window.__lenis.start();
                 }
+                isSwitchingCaseRef.current = false;
               },
             });
 
@@ -828,9 +839,10 @@ export const FolderStackAnimation: React.FC = () => {
         tlNextLeave.to(items, { y: "-30vh", opacity: 0, duration: 0.25, ease: "power1.in" }, 0);
       }
     } else {
-      // ── page-turn: Seamless Sibling Case Switch (glitch-free paper transition) ──
-      const tlTurn = gsap.timeline({
-        defaults: { duration: 0.4, ease: "power2.inOut" },
+      // ── Authentic 3D Flap Fold: Close shut, switch case, and unfold open ──
+      soundFx.playFolderFlap();
+
+      const tlSwitch = gsap.timeline({
         onStart: () => {
           if (typeof window !== "undefined" && window.__lenis) {
             window.__lenis.scrollTo(0, { duration: 0.4, force: true });
@@ -838,28 +850,71 @@ export const FolderStackAnimation: React.FC = () => {
             window.scrollTo({ top: 0, behavior: "instant" });
           }
         },
+        onComplete: () => {
+          isSwitchingCaseRef.current = false;
+        },
       });
 
-      const sheets = document.querySelectorAll(`.${styles.caseFolderCoverBack}, .${styles.caseFolderA4Container}`);
-      if (sheets.length > 0) {
-        tlTurn.to(sheets, { opacity: 0.15, scale: 0.98, duration: 0.18, ease: "power2.in" }, 0);
-      }
-      if (chars.length > 0) {
-        tlTurn.to(chars, { yPercent: 40, opacity: 0, duration: 0.18, stagger: 0.01, ease: "power2.in" }, 0);
-      }
-
-      tlTurn.add(() => {
-        setActiveGroupIndex(targetGroup);
-        setActiveCaseIndex(targetCase);
-      });
-
-      if (sheets.length > 0) {
-        tlTurn.fromTo(
-          sheets,
-          { opacity: 0.15, scale: 0.98 },
-          { opacity: 1, scale: 1, duration: 0.3, ease: "power2.out", clearProps: "all" }
+      // 1. Fold cover shut from -180deg to 0deg (Smooth & Solid)
+      if (cover) {
+        tlSwitch.to(
+          cover,
+          {
+            rotateY: 0,
+            transformOrigin: "left center",
+            duration: 0.65,
+            ease: "power2.inOut",
+          },
+          0
         );
       }
+
+      // Title characters slide and fade away
+      if (chars.length > 0) {
+        tlSwitch.to(
+          chars,
+          { yPercent: 30, opacity: 0, duration: 0.28, stagger: 0.01, ease: "power2.in" },
+          0
+        );
+      }
+
+      // 2. Midpoint Swap: State update while flap is completely shut
+      tlSwitch.add(() => {
+        setActiveGroupIndex(targetGroup);
+        setActiveCaseIndex(targetCase);
+        soundFx.playPaperRustle();
+      });
+
+      // 3. Unroll cover back from 0deg to -180deg (Graceful Deceleration revealing new case)
+      if (cover) {
+        tlSwitch.to(
+          cover,
+          {
+            rotateY: -180,
+            transformOrigin: "left center",
+            duration: 0.75,
+            ease: "power3.out",
+            onStart: () => {
+              soundFx.playFolderFlap();
+            },
+          },
+          "+=0.04"
+        );
+      }
+
+      // 4. Reveal new hero title characters as flap opens
+      tlSwitch.add(() => {
+        const newChars = caseHeroTitleRef.current
+          ? caseHeroTitleRef.current.querySelectorAll(".case-char")
+          : [];
+        if (newChars.length > 0) {
+          gsap.fromTo(
+            newChars,
+            { yPercent: 30, opacity: 0 },
+            { yPercent: 0, opacity: 1, duration: 0.45, stagger: 0.015, ease: "power2.out", clearProps: "all" }
+          );
+        }
+      }, "-=0.45");
     }
   };
 
@@ -1035,7 +1090,7 @@ export const FolderStackAnimation: React.FC = () => {
       {/* Reader View Dossier */}
       {phase !== "stack" && (
         <ReaderView
-          key={activeCase.slug}
+          key={activeGroup.groupId}
           group={activeGroup}
           allGroups={FOLDER_GROUPS}
           currentCase={activeCase}
